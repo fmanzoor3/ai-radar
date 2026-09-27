@@ -669,13 +669,24 @@ function storyCard(t, kind, sticker = kind === 'new'){
   </article>`;
 }
 
+// Attention breaks ties between equally significant stories: the latest
+// Hacker News score the radar recorded for the topic.
+const hype = t => ((t.traction || []).at(-1) || {}).hn_points || 0;
+
 function renderLatest(){
   const d = new Date(SWEEP + 'T12:00:00Z');
   document.getElementById('sweep').textContent =
     `${d.toLocaleDateString('en-GB', { weekday:'short', timeZone:'UTC' })} ${fmt(SWEEP)}`;
 
-  const breaking = DATA.filter(t => { const u = lastUpdate(t); return u.impact === 'breaking' && u.date > SINCE && !isPaper(t); })
-                       .sort(byRecent);
+  // A breaking update counts for a week from when it happened, or, if the
+  // radar only found it later, for a week from when it first appeared here:
+  // the reader has not been told yet. GPT-6 Astra launched on 3 Sep while the
+  // radar was down and filtering model launches, and only reached the page on
+  // 27 Sep. Most important first, then newest: a date-only sort put GPT-6 Sol
+  // and Luna above Astra.
+  const breaking = DATA.filter(t => !isPaper(t) && t.timeline.some(b =>
+                         b.impact === 'breaking' && (b.date > SINCE || t.first_seen > SINCE)))
+                       .sort((a, b) => b.significance - a.significance || hype(b) - hype(a) || byRecent(a, b));
   // New on the radar: topics first seen this week, plus notable developments
   // this week on older topics. A lab incident (OpenAI's agents escaping a
   // sandbox) belongs here: worth knowing, but nothing for the reader to act on.
