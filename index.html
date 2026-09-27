@@ -321,6 +321,18 @@ span.mini.lens:hover{box-shadow:none}
 .oc-close:hover{box-shadow:inset 0 0 0 2px var(--ink)}
 .oc-close:focus-visible{outline:2.5px solid var(--ink);outline-offset:2px}
 
+/* ---------- breaking: unread, mark read, archive ---------- */
+.kicker .unread{margin:0 -2px 0 2px}
+.bk-tools{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.bk-btn{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:13.5px;
+  color:var(--ink);padding:8px 14px;border-radius:999px;background:var(--card);box-shadow:inset 0 0 0 1.5px var(--line)}
+.bk-btn .n{font-family:var(--f-mono);font-weight:400;font-size:11.5px;color:var(--muted)}
+.bk-btn:hover{box-shadow:inset 0 0 0 2px var(--ink)}
+.bk-btn:focus-visible{outline:2.5px solid var(--ink);outline-offset:2px}
+.bk-btn[aria-expanded="true"]{background:var(--ink);color:var(--paper);box-shadow:none}
+.bk-btn[aria-expanded="true"] .n{color:inherit;opacity:.7}
+#bk-archive{margin-top:10px}
+
 </style>
 
 <div class="wrap">
@@ -657,12 +669,12 @@ const WINDOW_DAYS = 7, NEW_CARDS = 8, LIST_FIRST = 20;
 const shiftDays = (iso, n) => { const d = new Date(iso + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
 const SINCE = shiftDays(SWEEP, -WINDOW_DAYS);
 
-function storyCard(t, kind, sticker = kind === 'new'){
+function storyCard(t, kind, sticker = kind === 'new', unread = false){
   return `<article class="story story--${kind}" style="--c:${colorOf(t.slug)};--c2:${c2Of(t.slug)}">
     <span class="disc d1"></span><span class="disc d2"></span>
     ${sticker ? '<span class="sticker">NEW</span>' : ''}
     <button class="story-head" data-expand="${t.slug}" aria-expanded="false">
-      <span class="kicker"><span class="tag">${esc(CLI[HOME[t.slug]].name)}</span><b>${esc(t.name)}</b><i class="kd">${fmt(lastDate(t))}</i></span>
+      <span class="kicker"><span class="tag">${esc(CLI[HOME[t.slug]].name)}</span>${unread ? '<span class="fresh unread" title="Not opened yet"></span>' : ''}<b>${esc(t.name)}</b><i class="kd">${fmt(lastDate(t))}</i></span>
       <span class="headline">${esc(t.brief)}</span>
     </button>
     <div class="detail" hidden></div>
@@ -672,6 +684,31 @@ function storyCard(t, kind, sticker = kind === 'new'){
 // Attention breaks ties between equally significant stories: the latest
 // Hacker News score the radar recorded for the topic.
 const hype = t => ((t.traction || []).at(-1) || {}).hn_points || 0;
+
+/* Breaking stays until it has been read. "Read" means the card was opened, or
+   "Mark all as read" was pressed. It is remembered per browser (localStorage),
+   keyed by topic and update date, so a topic that breaks again later comes
+   back unread. Storage can be missing (private windows, blocked site data):
+   the page then behaves as if nothing was read, and unread cards fall away
+   after KEEP_UNREAD_DAYS instead of lingering forever. */
+const SEEN_KEY = 'radar-read-breaking', KEEP_UNREAD_DAYS = 30;
+const OLDEST_UNREAD = shiftDays(SWEEP, -KEEP_UNREAD_DAYS);
+const readSeen = () => { try { return new Set(JSON.parse(localStorage.getItem(SEEN_KEY) || '[]')); } catch (e) { return new Set(); } };
+const writeSeen = s => { try { localStorage.setItem(SEEN_KEY, JSON.stringify([...s])); } catch (e) {} };
+const breakingUpdate = t => t.timeline.filter(b => b.impact === 'breaking').reduce((m, b) => (!m || b.date > m.date) ? b : m, null);
+const bkey = t => `${t.slug}@${breakingUpdate(t).date}`;
+const everBroke = () => DATA.filter(t => !isPaper(t) && breakingUpdate(t));
+const byImportance = (a, b) => b.significance - a.significance || hype(b) - hype(a) || byRecent(a, b);
+function markRead(keys){ const s = readSeen(); keys.forEach(k => s.add(k)); writeSeen(s); }
+
+// The archive: every breaking story the radar has recorded, newest first.
+function archiveRows(){
+  const all = everBroke().sort((a, b) => breakingUpdate(b).date.localeCompare(breakingUpdate(a).date));
+  return all.map(t => {
+    const b = breakingUpdate(t), isLatest = b === lastUpdate(t);
+    return row(t, { text: isLatest ? t.brief : oneLiner(b.delta, 112), date: b.date });
+  }).join('');
+}
 
 function renderLatest(){
   const d = new Date(SWEEP + 'T12:00:00Z');
@@ -684,9 +721,16 @@ function renderLatest(){
   // radar was down and filtering model launches, and only reached the page on
   // 27 Sep. Most important first, then newest: a date-only sort put GPT-6 Sol
   // and Luna above Astra.
-  const breaking = DATA.filter(t => !isPaper(t) && t.timeline.some(b =>
-                         b.impact === 'breaking' && (b.date > SINCE || t.first_seen > SINCE)))
-                       .sort((a, b) => b.significance - a.significance || hype(b) - hype(a) || byRecent(a, b));
+  // Beyond its week, a breaking story stays while it is unread (up to
+  // KEEP_UNREAD_DAYS), so nothing important falls off before it was seen.
+  const seen = readSeen();
+  const inWeek = t => { const b = breakingUpdate(t); return b.date > SINCE || t.first_seen > SINCE; };
+  const unread = t => !seen.has(bkey(t));
+  const breaking = everBroke().filter(t => {
+                         const b = breakingUpdate(t);
+                         return inWeek(t) || (unread(t) && (b.date > OLDEST_UNREAD || t.first_seen > OLDEST_UNREAD));
+                       }).sort(byImportance);
+  const nUnread = breaking.filter(unread).length, nAll = everBroke().length;
   // New on the radar: topics first seen this week, plus notable developments
   // this week on older topics. A lab incident (OpenAI's agents escaping a
   // sandbox) belongs here: worth knowing, but nothing for the reader to act on.
@@ -696,13 +740,19 @@ function renderLatest(){
                     .sort((a, b) => b.significance - a.significance || byRecent(a, b)).slice(0, NEW_CARDS);
   const rest = DATA.filter(t => !breaking.includes(t) && !fresh.includes(t)).sort(byRecent);
 
+  // The tab badge counts what is still unread in Breaking, plus New.
   const cnt = document.getElementById('tab-cnt');
-  cnt.textContent = breaking.length + fresh.length || '';
-  cnt.hidden = !(breaking.length + fresh.length);
+  cnt.textContent = nUnread + fresh.length || '';
+  cnt.hidden = !(nUnread + fresh.length);
 
-  document.getElementById('sec-breaking').innerHTML = breaking.length
-    ? `<h2 class="sec-h"><span class="pulse"></span>Breaking <span class="n">${breaking.length}</span></h2><div class="stack">${breaking.map(t => storyCard(t, 'breaking')).join('')}</div>`
-    : `<h2 class="sec-h">Breaking</h2><p class="quiet">Nothing breaking this week.</p>`;
+  const tools = `<div class="bk-tools">
+      ${nUnread ? `<button class="bk-btn" data-mark-read>Mark all as read</button>` : ''}
+      ${nAll ? `<button class="bk-btn" data-archive aria-expanded="false">All breaking news <span class="n">${nAll}</span></button>` : ''}
+    </div>
+    <ul class="rows" id="bk-archive" hidden>${nAll ? archiveRows() : ''}</ul>`;
+  document.getElementById('sec-breaking').innerHTML = (breaking.length
+    ? `<h2 class="sec-h"><span class="pulse"></span>Breaking <span class="n">${breaking.length}</span></h2><div class="stack">${breaking.map(t => storyCard(t, 'breaking', false, unread(t))).join('')}</div>`
+    : `<h2 class="sec-h">Breaking</h2><p class="quiet">Nothing breaking right now.</p>`) + tools;
   const sn = document.getElementById('sec-new');
   sn.innerHTML = fresh.length
     ? `<h2 class="sec-h">New on the radar <span class="n">${fresh.length}</span></h2><div class="stack">${fresh.map(t => storyCard(t, 'new', t.first_seen > SINCE)).join('')}</div>` : '';
@@ -772,7 +822,25 @@ window.addEventListener('hashchange', () => {
 });
 document.addEventListener('click', e => {
   const tab = e.target.closest('[data-tab]'); if (tab) { go(tab.dataset.tab === 'topics' ? 'topics' : 'latest'); return; }
-  const ex = e.target.closest('[data-expand]'); if (ex) { toggle(ex); if (ex.getAttribute('aria-expanded') === 'true') lastOpened = ex; return; }
+  const ex = e.target.closest('[data-expand]'); if (ex) {
+    toggle(ex);
+    if (ex.getAttribute('aria-expanded') === 'true') {
+      lastOpened = ex;
+      // Opening a breaking card is reading it: remember it, drop its dot.
+      if (ex.closest('#sec-breaking .story')) {
+        markRead([bkey(T[ex.dataset.expand])]);
+        ex.querySelector('.unread')?.remove();
+      }
+    }
+    return;
+  }
+  if (e.target.closest('[data-mark-read]')) {
+    markRead(everBroke().map(bkey)); renderLatest(); return;
+  }
+  const ar = e.target.closest('[data-archive]'); if (ar) {
+    const list = document.getElementById('bk-archive'), open = list.hidden;
+    list.hidden = !open; ar.setAttribute('aria-expanded', String(open)); return;
+  }
   const cl = e.target.closest('[data-close]'); if (cl) { closeCard(cl.closest('.story, .row').querySelector(':scope > [data-expand]')); return; }
   const ol = e.target.closest('[data-older]'); if (ol) { document.getElementById('older').hidden = false; ol.remove(); return; }
   const cd = e.target.closest('[data-card]'); if (cd) { go('topics' + (cd.dataset.card ? '.' + cd.dataset.card : '')); return; }
