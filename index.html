@@ -227,6 +227,12 @@ button{font:inherit;color:inherit}
   .bdot{transition:none}
 }
 
+/* `hidden` must always win. The artifact viewer injects this rule, so every
+   test there passed; GitHub Pages serves the page without it, and B's
+   `.detail{display:grid}` beat the browser's default, so an opened card could
+   never close (hidden=true, still 716px tall). Kept in the page itself. */
+[hidden]{display:none !important}
+
 /* ---------- topics tab: cards ---------- */
 .col-wide{max-width:900px}
 .cards-view{display:grid;gap:18px}
