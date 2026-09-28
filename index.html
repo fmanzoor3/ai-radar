@@ -338,7 +338,15 @@ span.mini.lens:hover{box-shadow:none}
 .oc-att .lbl{display:block;margin-bottom:2px}
 .oc-att a{color:inherit;text-decoration:underline;text-underline-offset:2px}
 
+/* ---------- light / dark button ---------- */
+.top-r{display:flex;align-items:center;gap:10px}
+.theme-btn{all:unset;box-sizing:border-box;cursor:pointer;width:42px;height:42px;border-radius:50%;
+  display:grid;place-items:center;background:var(--card);color:var(--ink);border:1.5px solid var(--ink)}
+.theme-btn:hover{background:var(--ink);color:var(--paper)}
+.theme-btn:focus-visible{outline:2.5px solid var(--ink);outline-offset:2px}
+
 </style>
+<script>try{var t=localStorage.getItem('radar-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
 
 <div class="wrap">
   <header class="top">
@@ -353,10 +361,13 @@ span.mini.lens:hover{box-shadow:none}
         <div class="sweep" id="sweep"></div>
       </div>
     </div>
+    <div class="top-r">
     <nav class="tabs" role="tablist" aria-label="Views">
       <button role="tab" id="tab-latest" aria-controls="view-latest" aria-selected="true" data-tab="latest">Latest <span class="cnt" id="tab-cnt"></span></button>
       <button role="tab" id="tab-topics" aria-controls="view-topics" aria-selected="false" data-tab="topics">Topics</button>
     </nav>
+    <button class="theme-btn" id="theme-btn" type="button" data-theme-toggle aria-label="Switch colour theme"></button>
+    </div>
   </header>
 
   <main>
@@ -818,6 +829,30 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && lastOpened) { closeCard(lastOpened); lastOpened = null; }
 });
 
+/* ---------- light / dark ----------
+   Follows the device until the reader presses the button; then their choice
+   is kept (localStorage, per browser). The icon shows the mode it switches to. */
+const SUN = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg>';
+const MOON = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor"><path d="M20.2 14.6A8.5 8.5 0 0 1 9.4 3.8a8.5 8.5 0 1 0 10.8 10.8z"/></svg>';
+const themeNow = () => {
+  const t = document.documentElement.getAttribute('data-theme');
+  return t === 'dark' || t === 'light' ? t : (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+};
+function paintThemeBtn(){
+  const b = document.getElementById('theme-btn'); if (!b) return;
+  const dark = themeNow() === 'dark';
+  b.innerHTML = dark ? SUN : MOON;
+  b.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
+  b.title = b.getAttribute('aria-label');
+}
+function toggleTheme(){
+  const next = themeNow() === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  try { localStorage.setItem('radar-theme', next); } catch (e) {}
+  paintThemeBtn();
+}
+matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', paintThemeBtn);
+
 /* ---------- tabs + routing ---------- */
 let pending = null;   // a topic to open once its card view has rendered
 function showTab(name){
@@ -845,6 +880,7 @@ window.addEventListener('hashchange', () => {
   route();
 });
 document.addEventListener('click', e => {
+  if (e.target.closest('[data-theme-toggle]')) { toggleTheme(); return; }
   const tab = e.target.closest('[data-tab]'); if (tab) { go(tab.dataset.tab === 'topics' ? 'topics' : 'latest'); return; }
   const ex = e.target.closest('[data-expand]'); if (ex) {
     toggle(ex);
@@ -873,6 +909,7 @@ document.addEventListener('click', e => {
 
 renderLatest();
 route();
+paintThemeBtn();
 
 })();
 </script>
