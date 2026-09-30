@@ -1091,6 +1091,26 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Enter' && e.target.matches('.fb-note input')) e.target.nextElementSibling.click();
 });
 
+/* ---------- staying current ----------
+   GitHub Pages lets a browser reuse the page for 10 minutes, and an iPhone
+   home-screen app resumes an old copy from the background for as long as it
+   likes: a rating fix published at 08:59 was not on the owner's phone
+   minutes later. publish.py puts version.txt (this page's BUILD) next to the
+   page. When it names a newer build, load that, with ?v= so no cache can hand
+   the old page back; the ?v= check stops a reload loop if one somehow does.
+   In the claude.ai artifact the fetch fails and nothing happens. */
+const BUILD = '6cc7e6fb1aa4';
+async function checkFresh(){
+  if (!/^https?:$/.test(location.protocol)) return;
+  try {
+    const r = await fetch(`version.txt?t=${Date.now()}`, { cache:'no-store' });
+    const v = r.ok ? (await r.text()).trim() : '';
+    if (/^[0-9a-f]{8,}$/.test(v) && v !== BUILD && new URLSearchParams(location.search).get('v') !== v)
+      location.replace(`${location.pathname}?v=${v}${location.hash}`);
+  } catch (e) {}
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) checkFresh(); });
+
 /* ---------- tabs + routing ---------- */
 let pending = null;   // a topic to open once its card view has rendered
 function showTab(name){
@@ -1159,6 +1179,7 @@ renderLatest();
 route();
 paintThemeBtn();
 fbFlush();
+checkFresh();
 
 })();
 </script>
