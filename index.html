@@ -387,6 +387,18 @@ span.mini.lens:hover{box-shadow:none}
 .out-row a{color:var(--ink);font-size:15px;line-height:1.38;text-decoration:none}
 .out-row a:hover{text-decoration:underline}
 
+/* ---------- search (Topics tab) ---------- */
+.search{position:relative;display:block}
+.search svg{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+/* 16px text: iOS zooms the page into any smaller input when it is focused. */
+.search input{-webkit-appearance:none;appearance:none;box-sizing:border-box;width:100%;font:inherit;font-size:16px;
+  padding:12px 16px 12px 44px;border-radius:999px;border:1.5px solid var(--ink);background:var(--card);color:var(--ink)}
+.search input::placeholder{color:var(--muted)}
+.search input:focus{outline:none;box-shadow:0 0 0 3px color-mix(in oklab,var(--ink) 18%,transparent)}
+#search-out{display:grid;gap:10px}
+#search-out[hidden]{display:none}
+.s-places{padding-inline:4px}
+
 </style>
 <script>try{var t=localStorage.getItem('radar-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
 
@@ -733,12 +745,70 @@ function prodView(c, p){
     (related.length ? `<h3 class="p-sub">Related</h3>${rowsOf(related, relatedRow)}` : '');
 }
 
+/* ---------- search ----------
+   One box above the category grid. Every word typed must start a word
+   somewhere in the topic ("ai" must not match "said"); a topic ranks by where
+   its weakest word was found: name, then headline, then products and tags,
+   then the explanation, then its history. Ties go to the newest. Product and
+   category cards whose names match come first, as links. The query survives
+   a trip into a card and back. */
+let query = '';
+const SEARCH_IN = [
+  t => t.name,
+  t => `${t.brief} ${t.title}`,
+  t => `${t.products.map(p => PROD[p]?.name || p).join(' ')} ${(t.tags || []).join(' ')}`,
+  t => `${t.explain || ''} ${t.why || ''} ${t.summary || ''} ${t.unlocks || ''}`,
+  t => t.timeline.map(b => b.delta).join(' '),
+];
+const escRe = w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const wordsOf = q => q.toLowerCase().split(/\s+/).filter(Boolean)
+  .map(w => new RegExp('(^|[^a-z0-9])' + escRe(w), 'i'));
+function searchTopics(words){
+  return DATA.map(t => {
+      const fields = SEARCH_IN.map(f => f(t));
+      let rank = 0;
+      for (const re of words) {
+        const i = fields.findIndex(f => re.test(f));
+        if (i < 0) return null;
+        rank = Math.max(rank, i);
+      }
+      return { t, rank };
+    }).filter(Boolean)
+    .sort((a, b) => a.rank - b.rank || byRecent(a.t, b.t)).map(x => x.t);
+}
+function renderSearch(){
+  const out = document.getElementById('search-out'), grid = document.getElementById('cat-grid');
+  if (!out) return;
+  const q = query.trim(), words = wordsOf(q);
+  grid.hidden = !!q; out.hidden = !q;
+  if (!q) { out.innerHTML = ''; return; }
+  const hits = searchTopics(words);
+  const places = [...CL.map(c => ({ key:c.id, name:c.name, v:c.v })),
+                  ...Object.values(PROD).map(p => ({ key:`${p.cat}.${p.id}`, name:p.name, v:CLI[p.cat].v }))]
+    // A company card also answers to its products' names ("claude" -> Anthropic).
+    .filter(p => words.every(re => re.test(p.name)) || (PROD[p.key.split('.')[1]] && ALSO[p.name] && nameRe(p).test(q)));
+  out.innerHTML = (places.length ? `<p class="oc-on s-places"><span class="lbl">Go to</span>${places.map(p =>
+      `<button data-card="${p.key}"><span class="tag" style="--c:var(${p.v})">${esc(p.name)}</span></button>`).join('')}</p>` : '') +
+    (hits.length ? `<h3 class="p-sub">${plural(hits.length, 'topic')}</h3>${rowsOf(hits)}`
+                 : `<p class="quiet">Nothing on the radar matches “${esc(q)}”.</p>`);
+}
+const SEARCH_ICON = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg>';
+
 function renderTopics(key){
   const [cid, pid] = (key || '').split('.');
   const c = CLI[cid], p = c && c.products.find(x => x.id === pid);
   document.getElementById('cards').innerHTML =
-    !c ? `<div class="grid">${CL.map(catCard).join('')}</div>` : p ? prodView(c, p) : catView(c);
+    !c ? `<label class="search">${SEARCH_ICON}<input id="q" type="search" value="${esc(query)}"
+            placeholder="Search topics, e.g. Jev or Claude" aria-label="Search topics"
+            autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search"></label>
+         <div id="search-out" hidden></div>
+         <div class="grid" id="cat-grid">${CL.map(catCard).join('')}</div>`
+       : p ? prodView(c, p) : catView(c);
+  if (!c) renderSearch();
 }
+document.addEventListener('input', e => { if (e.target.id === 'q') { query = e.target.value; renderSearch(); } });
+// Enter puts the phone keyboard away; the results are already showing.
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'q') e.target.blur(); });
 
 /* ---------- latest tab ----------
    Breaking: updates graded `breaking` in the past week. New on the radar:
@@ -1099,7 +1169,7 @@ document.addEventListener('keydown', e => {
    page. When it names a newer build, load that, with ?v= so no cache can hand
    the old page back; the ?v= check stops a reload loop if one somehow does.
    In the claude.ai artifact the fetch fails and nothing happens. */
-const BUILD = '6cc7e6fb1aa4';
+const BUILD = '455a18bb42cb';
 async function checkFresh(){
   if (!/^https?:$/.test(location.protocol)) return;
   try {
