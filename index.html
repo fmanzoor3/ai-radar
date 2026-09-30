@@ -398,6 +398,11 @@ span.mini.lens:hover{box-shadow:none}
 #search-out{display:grid;gap:10px}
 #search-out[hidden]{display:none}
 .s-places{padding-inline:4px}
+/* Older updates that match the search, under their topic's row. */
+.s-beats{list-style:none;margin:-2px 0 10px 40px;padding:0 12px 0 0;display:grid;gap:6px}
+.s-beats li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;font-size:13.5px;line-height:1.4;color:var(--ink-2)}
+.s-beats time{font-family:var(--f-mono);font-size:11px;color:var(--muted);padding-top:2px;white-space:nowrap}
+.s-beats .s-more{display:block;font-size:12.5px;color:var(--muted)}
 
 </style>
 <script>try{var t=localStorage.getItem('radar-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
@@ -776,6 +781,20 @@ function searchTopics(words){
     }).filter(Boolean)
     .sort((a, b) => a.rank - b.rank || byRecent(a.t, b.t)).map(x => x.t);
 }
+// A row shows a topic's latest update, so older updates that match the search
+// are listed under it. Searching "Jev" showed only OpenAI's Decisions API, the
+// Jev topic's newest update; Jev's launch and its review were in History.
+const BEATS_SHOWN = 3;
+function matchingBeats(t, words){
+  const latest = lastUpdate(t);
+  const bs = t.timeline.filter(b => b !== latest && words.every(re => re.test(b.delta)))
+                       .sort((a, b) => b.date.localeCompare(a.date));
+  if (!bs.length) return '';
+  const more = bs.length - BEATS_SHOWN;
+  return `<ol class="s-beats">${bs.slice(0, BEATS_SHOWN).map(b =>
+      `<li><time datetime="${b.date}">${fmt(b.date)}</time><span>${esc(oneLiner(b.delta, 140))}</span></li>`).join('')}
+    ${more > 0 ? `<li class="s-more">${plural(more, 'more update')} in the card</li>` : ''}</ol>`;
+}
 function renderSearch(){
   const out = document.getElementById('search-out'), grid = document.getElementById('cat-grid');
   if (!out) return;
@@ -789,7 +808,8 @@ function renderSearch(){
     .filter(p => words.every(re => re.test(p.name)) || (PROD[p.key.split('.')[1]] && ALSO[p.name] && nameRe(p).test(q)));
   out.innerHTML = (places.length ? `<p class="oc-on s-places"><span class="lbl">Go to</span>${places.map(p =>
       `<button data-card="${p.key}"><span class="tag" style="--c:var(${p.v})">${esc(p.name)}</span></button>`).join('')}</p>` : '') +
-    (hits.length ? `<h3 class="p-sub">${plural(hits.length, 'topic')}</h3>${rowsOf(hits)}`
+    (hits.length ? `<h3 class="p-sub">${plural(hits.length, 'topic')}</h3>
+      <ul class="rows">${hits.map(t => row(t).replace(/<\/li>\s*$/, `${matchingBeats(t, words)}</li>`)).join('')}</ul>`
                  : `<p class="quiet">Nothing on the radar matches “${esc(q)}”.</p>`);
 }
 const SEARCH_ICON = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg>';
@@ -1169,7 +1189,7 @@ document.addEventListener('keydown', e => {
    page. When it names a newer build, load that, with ?v= so no cache can hand
    the old page back; the ?v= check stops a reload loop if one somehow does.
    In the claude.ai artifact the fetch fails and nothing happens. */
-const BUILD = '455a18bb42cb';
+const BUILD = '1656e6d5a07b';
 async function checkFresh(){
   if (!/^https?:$/.test(location.protocol)) return;
   try {
