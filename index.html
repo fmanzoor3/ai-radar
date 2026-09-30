@@ -742,7 +742,7 @@ function renderTopics(key){
 
 /* ---------- latest tab ----------
    Breaking: updates graded `breaking` in the past week. New on the radar:
-   topics first seen in the past week, the most significant first (new to the
+   topics first seen in the past week, newest first (new to the
    reader even when the thing itself is older, like a model launch the radar
    missed). Then every other topic, newest update first, grouped by date. This
    list replaces the dot strip of every update, which could not be read. */
@@ -750,13 +750,14 @@ const WINDOW_DAYS = 7, NEW_CARDS = 8, LIST_FIRST = 20;
 const shiftDays = (iso, n) => { const d = new Date(iso + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
 const SINCE = shiftDays(SWEEP, -WINDOW_DAYS);
 
-function storyCard(t, kind, sticker = kind === 'new', unread = false){
+// `opts` lets the breaking archive show the update that broke, not the latest.
+function storyCard(t, kind, sticker = kind === 'new', unread = false, opts = {}){
   return `<article class="story story--${kind}" style="--c:${colorOf(t.slug)};--c2:${c2Of(t.slug)}">
     <span class="disc d1"></span><span class="disc d2"></span>
     ${sticker ? '<span class="sticker">NEW</span>' : ''}
     <button class="story-head" data-expand="${t.slug}" aria-expanded="false">
-      <span class="kicker"><span class="tag">${esc(CLI[HOME[t.slug]].name)}</span>${unread ? '<span class="fresh unread" title="Not opened yet"></span>' : ''}<b>${esc(t.name)}</b><i class="kd">${fmt(lastDate(t))}</i></span>
-      <span class="headline">${esc(t.brief)}</span>
+      <span class="kicker"><span class="tag">${esc(CLI[HOME[t.slug]].name)}</span>${unread ? '<span class="fresh unread" title="Not opened yet"></span>' : ''}<b>${esc(t.name)}</b><i class="kd">${fmt(opts.date ?? lastDate(t))}</i></span>
+      <span class="headline">${esc(opts.text ?? t.brief)}</span>
     </button>
     <div class="detail" hidden></div>
   </article>`;
@@ -779,7 +780,10 @@ const writeSeen = s => { try { localStorage.setItem(SEEN_KEY, JSON.stringify([..
 const breakingUpdate = t => t.timeline.filter(b => b.impact === 'breaking').reduce((m, b) => (!m || b.date > m.date) ? b : m, null);
 const bkey = t => `${t.slug}@${breakingUpdate(t).date}`;
 const everBroke = () => DATA.filter(t => !isPaper(t) && breakingUpdate(t));
-const byImportance = (a, b) => b.significance - a.significance || hype(b) - hype(a) || byRecent(a, b);
+// Newest first everywhere, by the date the card shows. The owner asked for
+// recency over importance (30 Sep 2026); significance, then attention, only
+// break ties within a day.
+const byNewest = (a, b) => byRecent(a, b) || hype(b) - hype(a);
 function markRead(keys){ const s = readSeen(); keys.forEach(k => s.add(k)); writeSeen(s); }
 
 // A model launch: tagged both model and release (GLM's cyber results and the
@@ -797,12 +801,16 @@ function launchLine(t){
 }
 const PLACED = {};
 
-// The archive: every breaking story the radar has recorded, newest first.
-function archiveRows(){
-  const all = everBroke().sort((a, b) => breakingUpdate(b).date.localeCompare(breakingUpdate(a).date));
-  return all.map(t => {
-    const b = breakingUpdate(t), isLatest = b === lastUpdate(t);
-    return row(t, { text: isLatest ? t.brief : oneLiner(b.delta, 112), date: b.date });
+// Earlier breaking news: every breaking story not in Breaking now, newest
+// first, drawn as the same cards. Each shows the update that broke, which is
+// not always the topic's latest.
+const earlierBroke = now => everBroke().filter(t => !now.includes(t))
+  .sort((a, b) => breakingUpdate(b).date.localeCompare(breakingUpdate(a).date));
+function archiveCards(list){
+  return list.map(t => {
+    const b = breakingUpdate(t);
+    return storyCard(t, 'breaking', false, false,
+      { text: b === lastUpdate(t) ? t.brief : oneLiner(b.delta, 112), date: b.date });
   }).join('');
 }
 
@@ -815,8 +823,8 @@ function renderLatest(){
   // radar only found it later, for a week from when it first appeared here:
   // the reader has not been told yet. GPT-6 Astra launched on 3 Sep while the
   // radar was down and filtering model launches, and only reached the page on
-  // 27 Sep. Most important first, then newest: a date-only sort put GPT-6 Sol
-  // and Luna above Astra.
+  // 27 Sep. Newest first, by the date on the card: importance-first was tried
+  // (27 Sep) and replaced at the owner's request (30 Sep).
   // Beyond its week, a breaking story stays while it is unread (up to
   // KEEP_UNREAD_DAYS), so nothing important falls off before it was seen.
   const seen = readSeen();
@@ -825,8 +833,8 @@ function renderLatest(){
   const breaking = everBroke().filter(t => {
                          const b = breakingUpdate(t);
                          return inWeek(t) || (unread(t) && (b.date > OLDEST_UNREAD || t.first_seen > OLDEST_UNREAD));
-                       }).sort(byImportance);
-  const nUnread = breaking.filter(unread).length, nAll = everBroke().length;
+                       }).sort(byNewest);
+  const nUnread = breaking.filter(unread).length, earlier = earlierBroke(breaking);
   // New models: launches that are not step changes, one line each. The owner
   // wants to hear about every model but found them crowding Breaking; only a
   // launch graded `breaking` (a real jump: see SKILL.md) goes up there.
@@ -839,7 +847,7 @@ function renderLatest(){
   const isNew = t => t.first_seen > SINCE;
   const recentNotable = t => { const u = lastUpdate(t); return u.date > SINCE && (u.impact === 'notable' || u.impact === 'breaking'); };
   const fresh = DATA.filter(t => !breaking.includes(t) && !models.includes(t) && !isPaper(t) && t.significance >= 3 && (isNew(t) || recentNotable(t)))
-                    .sort((a, b) => b.significance - a.significance || byRecent(a, b)).slice(0, NEW_CARDS);
+                    .sort(byNewest).slice(0, NEW_CARDS);
   const rest = DATA.filter(t => !breaking.includes(t) && !models.includes(t) && !fresh.includes(t)).sort(byRecent);
   // Where each topic sits now, and which update put it there: a rating says
   // whether that was the right place.
@@ -855,9 +863,9 @@ function renderLatest(){
 
   const tools = `<div class="bk-tools">
       ${nUnread ? `<button class="bk-btn" data-mark-read>Mark all as read</button>` : ''}
-      ${nAll ? `<button class="bk-btn" data-archive aria-expanded="false">All breaking news <span class="n">${nAll}</span></button>` : ''}
+      ${earlier.length ? `<button class="bk-btn" data-archive aria-expanded="false">Earlier breaking news <span class="n">${earlier.length}</span></button>` : ''}
     </div>
-    <ul class="rows" id="bk-archive" hidden>${nAll ? archiveRows() : ''}</ul>`;
+    <div class="stack bk-archive" id="bk-archive" hidden>${archiveCards(earlier)}</div>`;
   document.getElementById('sec-breaking').innerHTML = (breaking.length
     ? `<h2 class="sec-h"><span class="pulse"></span>Breaking <span class="n">${breaking.length}</span></h2><div class="stack">${breaking.map(t => storyCard(t, 'breaking', false, unread(t))).join('')}</div>`
     : `<h2 class="sec-h">Breaking</h2><p class="quiet">Nothing breaking right now.</p>`) + tools;
