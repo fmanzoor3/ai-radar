@@ -459,6 +459,8 @@ span.mini.lens:hover{box-shadow:none}
 .bf-srcs>summary{cursor:pointer;list-style:none;font-size:12px;color:var(--muted);text-decoration:underline dotted}
 .bf-srcs>summary::-webkit-details-marker{display:none}
 .bf-srcs .bf-src{margin:6px 0 0;line-height:1.7}
+.stories-h{margin-top:30px;scroll-margin-top:16px}
+.stories-h:focus{outline:none}
 
 /* brief.css: briefing card v3. Everything is scoped under .bf2 and every class is
    prefixed b2- so nothing clashes with the radar's own CSS. Uses the radar's :root
@@ -834,7 +836,7 @@ function row(t, opts = {}){
    ctx = {
      back:      { label: "Coding agents", href: "#..." }   optional
      title:     "Claude Code"  used when the briefing has no `title` (unmigrated ones)
-     topics:    16                                          optional
+     topics:    16   number of news stories on the card: the header button "All 16 stories" scrolls to them
      accent:    "--blue"   card accent (category colour); "blue" also accepted
      sinceDays: 7          window for "New this week"
      today:     "YYYY-MM-DD"  reference date for "New this week" (default b.updated)
@@ -961,13 +963,17 @@ function row(t, opts = {}){
 
     /* header */
     const lede = b.lede || String(b.summary || "").split(/(?<=\.)\s/)[0];
-    const stat = [ctx.topics != null ? `${ctx.topics} topics` : "", b.updated ? `updated ${day(b.updated)}` : ""].filter(Boolean).join(" · ");
+    const stat = b.updated ? `updated ${day(b.updated)}` : "";
+    /* The header button leads to the news stories under the briefing (the
+       page scrolls to them on [data-bf-stories]); the owner expected "Read
+       all" to mean every Claude Code story, not a walk through these lines,
+       which the sheet's Prev/Next already gives. */
     let h = `<header class="b2-hero">
       <span class="b2-blob b2-b1"></span><span class="b2-blob b2-b2"></span><span class="b2-blob b2-b3"></span>
       ${ctx.back ? `<a class="b2-back" href="${esc(ctx.back.href || "#")}">← ${esc(ctx.back.label)}</a>` : ""}
       <h1 class="b2-title">${esc(b.title || ctx.title || b.key)}</h1>
       <div class="b2-stat-row"><p class="b2-stat">${esc(stat)}</p>
-        ${list.length ? `<button class="b2-all" type="button" data-bf-item="${list[0].id}" aria-haspopup="dialog">Read all ${list.length} →</button>` : ""}</div>
+        ${ctx.topics ? `<button class="b2-all" type="button" data-bf-stories>All ${ctx.topics} ${ctx.topics === 1 ? "story" : "stories"} →</button>` : ""}</div>
       ${lede ? `<p class="b2-lede">${esc(lede)}</p>` : ""}
       ${(b.facts || []).length ? `<div class="b2-facts">${b.facts.map(f => `<span class="b2-fact" style="--fc:${tok(f.color || ctx.accent || "blue")}">${esc(f.text)}</span>`).join("")}</div>` : ""}
     </header>`;
@@ -1374,7 +1380,8 @@ const rowsOf = (list, opts) => `<ul class="rows">${list.map(t => row(t, opts ? o
 // count), so the old head() is skipped. Older briefings keep head() and the
 // list-style briefing until they are migrated.
 function briefPage(key, c, title, back, list){
-  return renderBriefing(BRIEFS[key], { back, title, topics:list.length, accent:c.v, sinceDays:WINDOW_DAYS, today:SWEEP });
+  return renderBriefing(BRIEFS[key], { back, title, topics:list.length, accent:c.v, sinceDays:WINDOW_DAYS, today:SWEEP }) +
+    `<h2 class="sec-h stories-h" id="stories" tabindex="-1">All stories <span class="n">${list.length}</span></h2>`;
 }
 
 function catView(c){
@@ -1859,7 +1866,7 @@ document.addEventListener('keydown', e => {
    page. When it names a newer build, load that, with ?v= so no cache can hand
    the old page back; the ?v= check stops a reload loop if one somehow does.
    In the claude.ai artifact the fetch fails and nothing happens. */
-const BUILD = 'db73bc772528';
+const BUILD = 'c25427f6eb14';
 async function checkFresh(){
   if (!/^https?:$/.test(location.protocol)) return;
   try {
@@ -1900,6 +1907,12 @@ window.addEventListener('hashchange', () => {
 });
 document.addEventListener('click', e => {
   if (e.target.closest('[data-theme-toggle]')) { toggleTheme(); return; }
+  // The briefing header's "All N stories" button: the news list under it.
+  if (e.target.closest('[data-bf-stories]')) {
+    const h = document.getElementById('stories');
+    if (h) { h.scrollIntoView({ block:'start', behavior: reduced ? 'auto' : 'smooth' }); h.focus({ preventScroll:true }); }
+    return;
+  }
   const fb = e.target.closest('[data-fb]'); if (fb) { fbRate(fb.closest('.fb').dataset.fbKey, fb.dataset.fb); return; }
   const fn = e.target.closest('[data-fb-note]'); if (fn) {
     const box = fn.closest('.fb'), inp = box.querySelector('input'), v = inp.value.trim();
