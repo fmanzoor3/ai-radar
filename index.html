@@ -782,47 +782,286 @@ dialog.bf2.b2-sheet::backdrop{background:color-mix(in oklab,#0b0c22 45%,transpar
 /* ---------- lab themes ----------
    A lab's card wears a theme drawn from the lab's own website (briefing field
    `theme`): cards.js sets <html data-lab="…"> while that card is open and
-   removes it on any other page. Only tokens, fonts and a few accents change;
-   the layout, the AI Radar header and the tabs stay ours, so the page reads as
-   the radar's page about the lab, never as the lab's own page. Fonts are free
-   lookalikes: the labs' own typefaces are custom and not licensed to us.
+   removes it on any other page. Fonts are free lookalikes: the labs' own
+   typefaces are custom and not licensed to us.
 
-   Anthropic (anthropic.com, 9 Oct 2026): warm ivory ground (#F0EEE6, cards
-   #FAF9F5), near-black ink (#141413), a serif for reading, a bold geometric
-   sans for headlines, sentence-case headings, black pill buttons, underlined
-   links, clay as the one accent, dark sections in #141413. */
+   Anthropic (anthropic.com, 9 Oct 2026). The whole page shifts to their look,
+   not just the colours:
+   - ground: ivory #F0EEE6, lighter panels #FAF9F5, kraft cards #E3DACC, ink #141413;
+     almost no colour; clay (#D97757, #A9502F for text) is the only accent and is
+     used sparingly (Breaking, timeline dots, focus rings, the "new" dot).
+   - type: bold geometric sans headlines in sentence case (DM Sans for their
+     Styrene), a serif for reading (Newsreader for their Tiempos), small
+     monospace uppercase field labels (JetBrains Mono) like their DATE /
+     CATEGORY / DETAILS rows.
+   - patterns: no boxed hero; lists as rows between thin rules; meta lines
+     "Category · date" above a sans title and a serif line; kraft release cards;
+     black rounded-rectangle buttons; underlined links; generous space.
+   - dark: their site is light-only; the dark variant is built from their
+     footer (#141413 ground, #1F1E1D panels, #2B2A27 kraft, ivory ink).
+   Only this file changes; brief.js / brief.css / cards.css are untouched, and
+   nothing here applies without <html data-lab="anthropic">. */
+
 :root[data-lab="anthropic"]{
-  --paper:#F0EEE6; --card:#FAF9F5; --ink:#141413; --ink-2:#3D3D3A; --muted:#6F6E68; --line:#DDDACF;
-  --purple:#C2613F; --orange:#D97757; --blue:#5E8DBA; --pink:#B65C7A; --yellow:#C9956B; --green:#6F8453; --aqua:#6F9C9D; --grey:#B0AEA5;
-  --hot:#B5473D; --blend:multiply; --tint:14%; --halo:#F0EEE6;
+  --paper:#F0EEE6; --card:#FAF9F5; --ink:#141413; --ink-2:#3D3D3A; --muted:#65645E; --line:#D9D5C9;
+  --blue:#3D3D3A; --pink:#D97757; --yellow:#CBBFA9; --green:#7A7768; --purple:#5E5D59; --aqua:#9C9A90; --orange:#C2613F; --grey:#B0AEA5;
+  --hot:#A9502F; --blend:multiply; --tint:10%; --halo:#F0EEE6;
+  --kraft:#E3DACC; --kraft-line:rgba(20,20,19,.16); --clay:#D97757; --clay-ink:#A9502F;
   --f-display:"DM Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-body:"Newsreader",Georgia,"Times New Roman",serif;
   --f-mono:"DM Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --lab-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
 }
 @media (prefers-color-scheme:dark){
   :root[data-lab="anthropic"]:not([data-theme="light"]){
     color-scheme:dark;
-    --paper:#141413; --card:#1F1E1D; --ink:#FAF9F5; --ink-2:#D3D0C6; --muted:#A3A097; --line:#383733;
-    --purple:#E0876A; --orange:#E39072; --blue:#8DB2D8; --pink:#D98AA4; --yellow:#DDB28C; --green:#A3B585; --aqua:#97C0C1; --grey:#5C5B56;
-    --hot:#E36C60; --blend:screen; --tint:18%; --halo:#141413;
+    --paper:#141413; --card:#1F1E1D; --ink:#FAF9F5; --ink-2:#D3D0C6; --muted:#A3A097; --line:#3A3935;
+    --blue:#D3D0C6; --pink:#D97757; --yellow:#8A7F6C; --green:#A3A097; --purple:#BDBAB0; --aqua:#8C8A82; --orange:#E08A6B; --grey:#5C5B56;
+    --hot:#E08A6B; --blend:screen; --tint:12%; --halo:#141413;
+    --kraft:#2B2A27; --kraft-line:rgba(250,249,245,.14); --clay:#D97757; --clay-ink:#E08A6B;
   }
 }
 :root[data-lab="anthropic"][data-theme="dark"]{
   color-scheme:dark;
-  --paper:#141413; --card:#1F1E1D; --ink:#FAF9F5; --ink-2:#D3D0C6; --muted:#A3A097; --line:#383733;
-  --purple:#E0876A; --orange:#E39072; --blue:#8DB2D8; --pink:#D98AA4; --yellow:#DDB28C; --green:#A3B585; --aqua:#97C0C1; --grey:#5C5B56;
-  --hot:#E36C60; --blend:screen; --tint:18%; --halo:#141413;
+  --paper:#141413; --card:#1F1E1D; --ink:#FAF9F5; --ink-2:#D3D0C6; --muted:#A3A097; --line:#3A3935;
+  --blue:#D3D0C6; --pink:#D97757; --yellow:#8A7F6C; --green:#A3A097; --purple:#BDBAB0; --aqua:#8C8A82; --orange:#E08A6B; --grey:#5C5B56;
+  --hot:#E08A6B; --blend:screen; --tint:12%; --halo:#141413;
+  --kraft:#2B2A27; --kraft-line:rgba(250,249,245,.14); --clay:#D97757; --clay-ink:#E08A6B;
 }
-/* Headlines: their sans, bold, sentence case; reading text in the serif. */
-:root[data-lab="anthropic"] .bf2 .b2-title{font-weight:700;letter-spacing:-.025em}
-:root[data-lab="anthropic"] .bf2 .b2-h,
-:root[data-lab="anthropic"] .stories-h{text-transform:none;letter-spacing:-.005em;font-size:17px;font-weight:700}
-:root[data-lab="anthropic"] .bf2 .b2-blob{display:none}
-:root[data-lab="anthropic"] .bf2 .b2-all{background:var(--ink);color:var(--paper);border-color:var(--ink);border-radius:999px;font-weight:500}
-:root[data-lab="anthropic"] .bf2 .b2-back{text-decoration:underline;text-underline-offset:3px}
-/* The lab's mark, small, beside the title: it says whose page this is. */
+
+/* The lab's mark beside the title (used by every lab theme). */
 .bf2 .b2-logo{display:inline-flex;vertical-align:baseline;margin-right:.32em}
 .bf2 .b2-logo svg{height:.72em;width:auto}
+
+/* ===== Anthropic ===== */
+/* one accent: the card's own colour becomes ink; focus rings in clay */
+:root[data-lab="anthropic"] .bf2{--c:var(--ink) !important;gap:44px}
+:root[data-lab="anthropic"] :focus-visible{outline-color:var(--clay-ink) !important}
+
+/* ---- hero: no box, huge sans title, serif lede, quiet meta, black button ---- */
+:root[data-lab="anthropic"] .bf2 .b2-hero{background:transparent;border-radius:0;padding:4px 0 32px;gap:14px;overflow:visible;border-bottom:1px solid var(--line)}
+:root[data-lab="anthropic"] .bf2 .b2-blob{display:none}
+:root[data-lab="anthropic"] .bf2 .b2-back{font-family:var(--f-display);font-size:14px;font-weight:500;color:var(--ink);text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}
+:root[data-lab="anthropic"] .bf2 .b2-title{font-family:var(--f-display);font-weight:700;font-size:clamp(44px,11vw,68px);line-height:1;letter-spacing:-.035em;max-width:none;margin:8px 0 4px}
+:root[data-lab="anthropic"] .bf2 .b2-logo svg{height:.68em}
+:root[data-lab="anthropic"] .bf2 .b2-stat{font-family:var(--f-display);font-size:14px;color:var(--muted)}
+:root[data-lab="anthropic"] .bf2 .b2-all{background:var(--ink);color:var(--paper);border-radius:8px;font-family:var(--f-display);font-size:14px;font-weight:500;padding:9px 14px}
+:root[data-lab="anthropic"] .bf2 .b2-all:hover{background:var(--ink-2);color:var(--paper)}
+:root[data-lab="anthropic"] .bf2 .b2-lede{font-family:var(--f-body);font-size:21px;line-height:1.36;color:var(--ink);max-width:32ch}
+:root[data-lab="anthropic"] .bf2 .b2-facts{display:block;margin-top:0;line-height:1.6}
+:root[data-lab="anthropic"] .bf2 .b2-fact{display:inline;white-space:nowrap;background:none;border:0;padding:0;border-radius:0;font-family:var(--f-display);font-size:14.5px;font-weight:500;color:var(--ink-2)}
+/* separators stay at the end of a line, never start one */
+:root[data-lab="anthropic"] .bf2 .b2-fact:not(:last-child)::after{content:"\00a0\00a0·\00a0\20";white-space:normal;color:var(--muted)}
+@media (min-width:860px){
+  :root[data-lab="anthropic"] .bf2 .b2-hero{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);column-gap:56px;row-gap:18px;padding-bottom:40px}
+  :root[data-lab="anthropic"] .bf2 .b2-back{grid-column:1/-1}
+  :root[data-lab="anthropic"] .bf2 .b2-title{grid-column:1;grid-row:2;align-self:end}
+  :root[data-lab="anthropic"] .bf2 .b2-lede{grid-column:2;grid-row:2;align-self:end;font-size:22px}
+  :root[data-lab="anthropic"] .bf2 .b2-stat-row{grid-column:1;grid-row:3;justify-content:flex-start;gap:8px 24px}
+  :root[data-lab="anthropic"] .bf2 .b2-facts{grid-column:2;grid-row:3;align-self:center}
+}
+
+/* ---- section headings: their sans, sentence case ---- */
+:root[data-lab="anthropic"] .bf2 .b2-sec{gap:16px}
+:root[data-lab="anthropic"] .bf2 .b2-top{align-items:baseline}
+:root[data-lab="anthropic"] .bf2 .b2-h{font-family:var(--f-display);font-size:24px;font-weight:600;line-height:1.2;letter-spacing:-.015em;text-transform:none;color:var(--ink)}
+:root[data-lab="anthropic"] .bf2 .b2-n{font-family:var(--f-display);font-size:16px;font-weight:400;color:var(--muted)}
+:root[data-lab="anthropic"] .bf2 .b2-hint{font-family:var(--f-display);font-size:13px;color:var(--muted);white-space:normal;text-align:right}
+:root[data-lab="anthropic"] .bf2 .b2-lbl{font-family:var(--lab-mono);font-size:11px;letter-spacing:.07em;color:var(--muted)}
+
+/* ---- new this week: a quiet line of underlined names with muted dates ---- */
+:root[data-lab="anthropic"] .bf2 .b2-strip{flex-wrap:wrap;align-items:baseline;gap:6px 20px;overflow:visible;padding:0}
+:root[data-lab="anthropic"] .bf2 .b2-nw-h{font-family:var(--f-display);font-size:15px;font-weight:600;letter-spacing:0;text-transform:none;align-self:baseline;margin-right:4px}
+/* the module's label has a <br> ("New this<br>week"); here it reads on one line:
+   the heading stays for screen readers, a one-line copy is drawn (alt text empty) */
+:root[data-lab="anthropic"] .bf2 .b2-nw-h{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+:root[data-lab="anthropic"] .bf2 .b2-strip::before{content:"New this week";content:"New this week" / "";font-family:var(--f-display);font-size:15px;font-weight:600;color:var(--ink);margin-right:4px}
+:root[data-lab="anthropic"] .bf2 .b2-fchip{border:0;background:none;padding:0;min-height:0;border-radius:0;gap:7px;align-items:baseline;font-family:var(--f-display);font-size:15px;color:var(--ink)}
+:root[data-lab="anthropic"] .bf2 .b2-fchip b{font-weight:500;text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}
+:root[data-lab="anthropic"] .bf2 .b2-fchip:hover b{text-decoration-thickness:2px}
+:root[data-lab="anthropic"] .bf2 .b2-fchip i{font-family:var(--f-display);font-size:13px;color:var(--muted)}
+:root[data-lab="anthropic"] .bf2 .b2-spark{display:none}
+
+/* ---- biggest moves: their news list (meta line, sans title, serif line, thin rules) ---- */
+:root[data-lab="anthropic"] .bf2 .b2-moves{gap:0;border-top:1px solid var(--line)}
+:root[data-lab="anthropic"] .bf2 .b2-move{background:none;border:0;border-bottom:1px solid var(--line);border-radius:0;padding:16px 0 18px;gap:4px}
+:root[data-lab="anthropic"] .bf2 .b2-move:hover{background:none}
+:root[data-lab="anthropic"] .bf2 .b2-move:hover b{text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}
+:root[data-lab="anthropic"] .bf2 .b2-mmeta{font-family:var(--f-display);font-size:13.5px;color:var(--muted);gap:10px}
+:root[data-lab="anthropic"] .bf2 .b2-mimp{text-transform:capitalize;letter-spacing:0;font-weight:600;color:var(--ink);background:none;padding:0;border-radius:0}
+:root[data-lab="anthropic"] .bf2 .b2-imp-breaking .b2-mimp{color:var(--clay-ink);background:none;padding:0}
+:root[data-lab="anthropic"] .bf2 .b2-imp-minor .b2-mimp{font-weight:500;color:var(--muted)}
+:root[data-lab="anthropic"] .bf2 .b2-move b{font-family:var(--f-display);font-size:18px;font-weight:500;line-height:1.3;letter-spacing:-.01em}
+:root[data-lab="anthropic"] .bf2 .b2-mtext{font-family:var(--f-body);font-size:15.5px;line-height:1.45;color:var(--ink-2)}
+@media (min-width:760px){
+  :root[data-lab="anthropic"] .bf2 .b2-move{grid-template-columns:150px minmax(0,1fr);column-gap:28px}
+  :root[data-lab="anthropic"] .bf2 .b2-mmeta{grid-row:1/3;flex-direction:column;align-items:flex-start;gap:2px;padding-top:3px}
+}
+:root[data-lab="anthropic"] .bf2 .b2-showmore{display:flex;justify-content:center;width:100%;font-family:var(--f-display);font-size:14px;font-weight:500;color:var(--ink-2);
+  background:var(--card);box-shadow:none;border:1px solid var(--line);border-radius:8px;padding:10px 16px}
+:root[data-lab="anthropic"] .bf2 .b2-showmore:hover{border-color:var(--ink);box-shadow:none}
+
+/* ---- known for / weaker at: two ruled lists, a small ink or clay mark ---- */
+:root[data-lab="anthropic"] .bf2 .b2-reps{gap:28px 40px}
+:root[data-lab="anthropic"] .bf2 .b2-rep{background:none;border:0;border-radius:0;padding:0}
+:root[data-lab="anthropic"] .bf2 .b2-rep-h{font-family:var(--f-display);font-size:16px;font-weight:600;letter-spacing:0;text-transform:none;color:var(--ink);padding:0 0 10px;border-bottom:1px solid var(--ink)}
+:root[data-lab="anthropic"] .bf2 .b2-rep-h i{font-family:var(--f-display);font-size:14px;color:var(--muted)}
+:root[data-lab="anthropic"] .bf2 .b2-rep li+li{border-top:0}
+:root[data-lab="anthropic"] .bf2 .b2-rep li{border-bottom:1px solid var(--line)}
+:root[data-lab="anthropic"] .bf2 .b2-repi{grid-template-columns:7px minmax(0,1fr);gap:14px;padding:12px 0;border-radius:0}
+:root[data-lab="anthropic"] .bf2 .b2-repi:hover{background:none}
+:root[data-lab="anthropic"] .bf2 .b2-repi:hover b{text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}
+:root[data-lab="anthropic"] .bf2 .b2-repd{width:7px;height:7px;border-radius:50%;background:var(--ink);margin-top:9px}
+:root[data-lab="anthropic"] .bf2 .b2-rep+.b2-rep .b2-repd{background:transparent;box-shadow:inset 0 0 0 1.5px var(--clay-ink)}
+:root[data-lab="anthropic"] .bf2 .b2-repi b{font-family:var(--f-display);font-size:16px;font-weight:500;line-height:1.3}
+:root[data-lab="anthropic"] .bf2 .b2-rs{font-family:var(--f-body);font-size:15px;line-height:1.4;color:var(--muted)}
+
+/* ---- lineups (Products, Models now): ruled rows, name left, muted detail right ---- */
+:root[data-lab="anthropic"] .bf2 .b2-lineup{background:none;border-radius:0;padding:0;border-top:1px solid var(--line)}
+:root[data-lab="anthropic"] .bf2 .b2-lineup li+li{border-top:0}
+:root[data-lab="anthropic"] .bf2 .b2-lineup li{border-bottom:1px solid var(--line)}
+:root[data-lab="anthropic"] .bf2 .b2-tool{grid-template-columns:minmax(0,1fr);padding:14px 0;border-radius:0}
+:root[data-lab="anthropic"] .bf2 .b2-tool:hover{background:none}
+:root[data-lab="anthropic"] .bf2 .b2-tool:hover .b2-tt b{text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}
+:root[data-lab="anthropic"] .bf2 .b2-tsw{display:none}
+:root[data-lab="anthropic"] .bf2 .b2-tt b{font-family:var(--f-display);font-size:16.5px;font-weight:500;white-space:normal}
+:root[data-lab="anthropic"] .bf2 .b2-tl{display:block;line-height:1.5}
+:root[data-lab="anthropic"] .bf2 .b2-ts{font-family:var(--f-body);font-size:15px;line-height:1.4;color:var(--ink-2);margin-right:0}
+:root[data-lab="anthropic"] .bf2 .b2-tchip{background:none;border:0;padding:0;border-radius:0;font-family:var(--f-display);font-size:13.5px;line-height:1.5;color:var(--muted);white-space:nowrap}
+:root[data-lab="anthropic"] .bf2 .b2-tl>*:not(:last-child)::after{content:"\00a0\00a0·\00a0\20";white-space:normal;color:var(--muted);font-family:var(--f-display);font-size:13.5px}
+:root[data-lab="anthropic"] .bf2 .b2-tt .b2-cmd,
+:root[data-lab="anthropic"] .bf2 .b2-srcs .b2-cmd{background:none;color:var(--muted);border:1px solid var(--line);border-radius:4px;font-family:var(--f-display);font-size:12px;padding:1px 7px}
+:root[data-lab="anthropic"] .bf2 .b2-cardhint{font-family:var(--f-display);font-size:13.5px;font-weight:500;color:var(--ink);text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}
+@media (min-width:760px){
+  :root[data-lab="anthropic"] .bf2 .b2-tb{grid-template-columns:minmax(0,250px) minmax(0,1fr);column-gap:28px;align-items:baseline}
+  :root[data-lab="anthropic"] .bf2 .b2-tl{justify-content:flex-end;text-align:right}
+}
+
+/* ---- keys (Build with it): kraft release cards with a mono field label ---- */
+:root[data-lab="anthropic"] .bf2 .b2-keys{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (min-width:640px){:root[data-lab="anthropic"] .bf2 .b2-keys{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}}
+:root[data-lab="anthropic"] .bf2 .b2-key{background:var(--kraft);border:0;box-shadow:none;border-radius:16px;padding:14px 16px 16px;gap:9px}
+:root[data-lab="anthropic"] .bf2 .b2-key:hover{border:0;box-shadow:inset 0 0 0 1px var(--ink)}
+:root[data-lab="anthropic"] .bf2 .b2-key:active{transform:none;box-shadow:none}
+:root[data-lab="anthropic"] .bf2 .b2-k{font-family:var(--lab-mono);font-size:11px;font-weight:400;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);
+  padding-bottom:9px;border-bottom:1px solid var(--kraft-line);white-space:normal;overflow:visible}
+:root[data-lab="anthropic"] .bf2 .b2-j{font-family:var(--f-display);font-size:16px;font-weight:500;line-height:1.3;color:var(--ink);white-space:normal}
+:root[data-lab="anthropic"] .bf2 .b2-key .b2-fresh{top:16px;right:14px}
+
+/* ---- key people: ruled rows, neutral initials discs ---- */
+:root[data-lab="anthropic"] .bf2 .b2-people{grid-template-columns:minmax(0,1fr);gap:0;border-top:1px solid var(--line)}
+@media (min-width:640px){:root[data-lab="anthropic"] .bf2 .b2-people{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:40px}}
+:root[data-lab="anthropic"] .bf2 .b2-people li{border-bottom:1px solid var(--line)}
+:root[data-lab="anthropic"] .bf2 .b2-person{background:none;border:0;border-radius:0;padding:12px 0;grid-template-columns:40px minmax(0,1fr);gap:14px}
+:root[data-lab="anthropic"] .bf2 .b2-person:hover{border:0}
+:root[data-lab="anthropic"] .bf2 .b2-person:hover b{text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}
+:root[data-lab="anthropic"] .bf2 .b2-av,
+:root[data-lab="anthropic"] .bf2 .b2-av.b2-dk{width:40px;height:40px;background:var(--kraft);color:var(--ink);font-family:var(--f-display);font-weight:600;font-size:13.5px;letter-spacing:0}
+:root[data-lab="anthropic"] .bf2 .b2-pb b{font-family:var(--f-display);font-size:16px;font-weight:500}
+:root[data-lab="anthropic"] .bf2 .b2-pb>span{font-family:var(--f-body);font-size:14.5px;color:var(--muted)}
+
+/* ---- release timeline: thin ink line, small clay dots, mono dates ---- */
+:root[data-lab="anthropic"] .bf2 .b2-tline li::before{background:var(--ink);width:1px;left:4px;opacity:.55}
+:root[data-lab="anthropic"] .bf2 .b2-tline li::after{width:9px;height:9px;top:6px;left:0;background:var(--clay);box-shadow:0 0 0 4px var(--paper)}
+:root[data-lab="anthropic"] .bf2 .b2-rel{padding:0 4px 4px}
+:root[data-lab="anthropic"] .bf2 .b2-rel time{font-family:var(--lab-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+:root[data-lab="anthropic"] .bf2 .b2-rel b{font-family:var(--f-display);font-size:16px;font-weight:500;line-height:1.3}
+:root[data-lab="anthropic"] .bf2 .b2-rel span{font-family:var(--f-body);font-size:14.5px;line-height:1.4;color:var(--ink-2)}
+@media (min-width:640px){
+  :root[data-lab="anthropic"] .bf2 .b2-tline li::before{width:auto;height:1px;left:0;top:4px}
+  :root[data-lab="anthropic"] .bf2 .b2-tline li::after{top:0}
+}
+
+/* ---- plain lists (Retiring soon): a kraft card of DATE-style field rows ---- */
+:root[data-lab="anthropic"] .bf2 .b2-list{background:var(--kraft);border-radius:16px;padding:6px 20px}
+:root[data-lab="anthropic"] .bf2 .b2-list li+li{border-top:1px solid var(--kraft-line)}
+:root[data-lab="anthropic"] .bf2 .b2-row{padding:14px 0;border-radius:0;gap:5px}
+:root[data-lab="anthropic"] .bf2 .b2-row:hover{background:none}
+:root[data-lab="anthropic"] .bf2 .b2-row:hover>span{text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}
+:root[data-lab="anthropic"] .bf2 .b2-row b{font-family:var(--lab-mono);font-size:11.5px;font-weight:400;letter-spacing:.06em;text-transform:uppercase;color:var(--ink)}
+:root[data-lab="anthropic"] .bf2 .b2-row>span{font-family:var(--f-display);font-size:15px;line-height:1.45;color:var(--ink)}
+@media (min-width:760px){
+  :root[data-lab="anthropic"] .bf2 .b2-row{grid-template-columns:200px minmax(0,1fr);column-gap:24px;align-items:baseline}
+}
+
+/* ---- other kinds a lab card may use: same quiet language ---- */
+:root[data-lab="anthropic"] .bf2 .b2-use{background:var(--card);border:0;border-radius:16px}
+:root[data-lab="anthropic"] .bf2 .b2-use:hover{border:0;box-shadow:inset 0 0 0 1px var(--ink)}
+:root[data-lab="anthropic"] .bf2 .b2-num,
+:root[data-lab="anthropic"] .bf2 .b2-num.b2-dk{background:var(--kraft);color:var(--ink);font-family:var(--f-display);font-weight:600}
+:root[data-lab="anthropic"] .bf2 .b2-use b{font-family:var(--f-display);font-weight:500}
+:root[data-lab="anthropic"] .bf2 .b2-ut{font-family:var(--f-body);font-size:15px;color:var(--muted)}
+:root[data-lab="anthropic"] .bf2 .b2-lk{background:none;border:0;padding:0;font-family:var(--f-display);font-size:13px;color:var(--muted)}
+:root[data-lab="anthropic"] .bf2 .b2-lk+.b2-lk::before{content:"·";margin:0 6px 0 2px}
+:root[data-lab="anthropic"] .bf2 .b2-vchip{background:none;border:0;padding:0;font-family:var(--f-display);font-size:14.5px;font-weight:500;text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}
+:root[data-lab="anthropic"] .bf2 .b2-vchip::before{display:none}
+:root[data-lab="anthropic"] .bf2 .b2-vs{gap:6px 18px}
+:root[data-lab="anthropic"] .bf2 .b2-surface,
+:root[data-lab="anthropic"] .bf2 .b2-mrow:hover{background:var(--card)}
+:root[data-lab="anthropic"] .bf2 .b2-mrow b,
+:root[data-lab="anthropic"] .bf2 .b2-stn{font-family:var(--f-display);font-weight:500}
+:root[data-lab="anthropic"] .bf2 .b2-cmd{font-family:var(--lab-mono)}
+
+/* ---- the sheet: ivory panel, sans title, mono labels, serif body, black buttons ---- */
+:root[data-lab="anthropic"] dialog.bf2.b2-sheet{gap:0;background:var(--card);border-radius:16px 16px 0 0;box-shadow:0 -12px 40px rgba(20,20,19,.18)}
+@media (min-width:700px){:root[data-lab="anthropic"] dialog.bf2.b2-sheet{border-radius:16px}}
+:root[data-lab="anthropic"] dialog.bf2.b2-sheet::backdrop{background:rgba(20,20,19,.45)}
+:root[data-lab="anthropic"] .bf2 .b2-sh-top{background:transparent;border-bottom:1px solid var(--line);padding:22px 22px 16px;gap:10px}
+:root[data-lab="anthropic"] .bf2 .b2-sh-disc{display:none}
+:root[data-lab="anthropic"] .bf2 .b2-sh-meta .b2-lbl{color:var(--ink)}
+:root[data-lab="anthropic"] .bf2 .b2-pos{font-family:var(--lab-mono);font-size:11px;color:var(--muted)}
+:root[data-lab="anthropic"] .bf2 .b2-nw{font-family:var(--f-display);font-size:12.5px}
+:root[data-lab="anthropic"] .bf2 .b2-sh-title{font-family:var(--f-display);font-size:26px;font-weight:500;line-height:1.15;letter-spacing:-.02em}
+:root[data-lab="anthropic"] .bf2 .b2-sh-key{background:transparent;border:1px solid var(--line);border-radius:6px;font-family:var(--lab-mono);font-weight:400}
+:root[data-lab="anthropic"] .bf2 .b2-x{background:transparent;border-radius:8px;box-shadow:inset 0 0 0 1px var(--line);top:16px;right:16px}
+:root[data-lab="anthropic"] .bf2 .b2-x:hover{box-shadow:inset 0 0 0 1px var(--ink)}
+:root[data-lab="anthropic"] .bf2 .b2-sh-body{padding:20px 22px 12px;gap:18px}
+:root[data-lab="anthropic"] .bf2 .b2-blk{gap:6px}
+:root[data-lab="anthropic"] .bf2 .b2-blk p{font-family:var(--f-body);font-size:16.5px;line-height:1.55;color:var(--ink-2)}
+:root[data-lab="anthropic"] .bf2 .b2-do p{font-family:var(--f-display);font-size:19px;font-weight:500;line-height:1.4;color:var(--ink)}
+:root[data-lab="anthropic"] .bf2 .b2-why{background:var(--kraft);border-radius:12px;padding:14px 16px}
+:root[data-lab="anthropic"] .bf2 .b2-why p{color:var(--ink)}
+:root[data-lab="anthropic"] .bf2 .b2-why .b2-lbl{color:var(--ink-2)}
+:root[data-lab="anthropic"] .bf2 .b2-srcs{gap:8px 16px}
+:root[data-lab="anthropic"] .bf2 .b2-src{border:0;background:none;padding:0;border-radius:0;font-family:var(--f-display);font-size:14.5px;color:var(--ink);text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}
+:root[data-lab="anthropic"] .bf2 .b2-src:hover{text-decoration-thickness:2px}
+:root[data-lab="anthropic"] .bf2 .b2-golink{background:var(--ink);color:var(--paper);border:0;border-radius:8px;font-family:var(--f-display);font-weight:500;font-size:14px;padding:8px 13px}
+:root[data-lab="anthropic"] .bf2 .b2-golink:hover{background:var(--ink-2)}
+:root[data-lab="anthropic"] .bf2 .b2-backto{font-family:var(--f-display);font-weight:500;color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+:root[data-lab="anthropic"] .bf2 .b2-sh-nav{border-top:1px solid var(--line)}
+:root[data-lab="anthropic"] .bf2 .b2-nv{background:transparent;box-shadow:inset 0 0 0 1px var(--line);border-radius:8px}
+:root[data-lab="anthropic"] .bf2 .b2-nv:hover{box-shadow:inset 0 0 0 1px var(--ink)}
+:root[data-lab="anthropic"] .bf2 .b2-nv:last-child{background:var(--ink);color:var(--paper);box-shadow:none}
+:root[data-lab="anthropic"] .bf2 .b2-nv:last-child .b2-lbl{color:var(--paper);opacity:.75}
+:root[data-lab="anthropic"] .bf2 .b2-nv:disabled{background:transparent;color:var(--ink)}
+:root[data-lab="anthropic"] .bf2 .b2-nv b{font-family:var(--f-display);font-weight:500}
+
+/* ---- the page's own story list under the card: their news-table rows ---- */
+:root[data-lab="anthropic"] .stories-h{font-family:var(--f-display);font-size:24px;font-weight:600;letter-spacing:-.015em;text-transform:none;color:var(--ink);margin-top:52px}
+:root[data-lab="anthropic"] .stories-h .n{font-family:var(--f-display);font-size:16px;font-weight:400;color:var(--muted)}
+:root[data-lab="anthropic"] .p-sub{font-family:var(--lab-mono);font-size:11px;font-weight:400;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:26px 0 0;padding:0 0 10px;border-bottom:1px solid var(--line)}
+:root[data-lab="anthropic"] .rows{gap:0}
+:root[data-lab="anthropic"] .rows .row-head{grid-template-columns:minmax(0,1fr) auto;gap:16px;padding:14px 0;border-radius:0;border-bottom:1px solid var(--line)}
+:root[data-lab="anthropic"] .rows .row-head .g{display:none}
+:root[data-lab="anthropic"] .rows .row-head:hover,
+:root[data-lab="anthropic"] .rows .row.open>.row-head{background:none}
+:root[data-lab="anthropic"] .rows .row-head:hover .row-text{text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}
+:root[data-lab="anthropic"] .row-text{font-family:var(--f-display);font-size:16px;font-weight:500;line-height:1.35}
+:root[data-lab="anthropic"] .row-meta{font-family:var(--f-body);font-size:14.5px;color:var(--muted);margin-top:3px}
+:root[data-lab="anthropic"] .rows time{font-family:var(--f-display);font-size:13.5px;color:var(--muted)}
+:root[data-lab="anthropic"] .rows .row .detail{padding:16px 0 24px}
+:root[data-lab="anthropic"] .rows .row .oc-why{background:var(--kraft);border-radius:12px}
+:root[data-lab="anthropic"] .rows .row .oc-why p{color:var(--ink)}
+:root[data-lab="anthropic"] .rows .row .oc-why .lbl{color:var(--ink-2)}
+:root[data-lab="anthropic"] .rows .row .lbl{font-family:var(--lab-mono);letter-spacing:.07em}
+:root[data-lab="anthropic"] .rows .row .oc-read,
+:root[data-lab="anthropic"] .rows .row .oc-rl{background:transparent;border-radius:0;box-shadow:none;border-bottom:1px solid var(--line);padding:10px 0}
+:root[data-lab="anthropic"] .rows .row .oc-rt{font-family:var(--f-display);text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}
+:root[data-lab="anthropic"] .rows .row .oc-close{background:var(--ink);color:var(--paper);border-radius:8px;box-shadow:none;font-family:var(--f-display);font-weight:500}
+@media (min-width:760px){
+  :root[data-lab="anthropic"] .rows .row-head{grid-template-columns:110px minmax(0,1fr)}
+  :root[data-lab="anthropic"] .rows .row-head time{order:-1;padding-top:2px}
+}
 
 </style>
 <script>try{var t=localStorage.getItem('radar-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
@@ -2193,7 +2432,7 @@ document.addEventListener('keydown', e => {
    page. When it names a newer build, load that, with ?v= so no cache can hand
    the old page back; the ?v= check stops a reload loop if one somehow does.
    In the claude.ai artifact the fetch fails and nothing happens. */
-const BUILD = 'bfa98ff00136';
+const BUILD = '5feb19ef5e12';
 async function checkFresh(){
   if (!/^https?:$/.test(location.protocol)) return;
   try {
