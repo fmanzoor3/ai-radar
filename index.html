@@ -297,6 +297,8 @@ span.mini.lens:hover{box-shadow:none}
   .ltile .st{grid-column:2}
   .ltile:has(.st) .lt-mk{grid-row:1/3}
 }
+/* More air before each group's label than inside a group. */
+.ltiles + .p-sub,.pgrid + .p-sub{margin-top:18px}
 .p-note{text-transform:none;letter-spacing:0;margin-left:6px;opacity:.85}
 /* The news tile under a category's cards: the category's broad stories are
    one tap away instead of a loose list. A row at every width. */
@@ -2565,7 +2567,7 @@ const NEWS_GLYPH = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
 function newsTile(c, broad){
   if (!broad.length) return '';
   const last = broad.map(lastDate).sort().pop(), today = broad.filter(t => lastDate(t) === SWEEP).length;
-  return `<button class="ltile lt-news" data-card="${c.id}.news" style="--acc:var(${c.v})">
+  return `<h3 class="p-sub">News</h3><button class="ltile lt-news" data-card="${c.id}.news" style="--acc:var(${c.v})">
     <span class="lt-mk">${NEWS_GLYPH}</span>
     <span class="lt-tx"><span class="lt-nm">News across ${esc(c.name.toLowerCase())}</span>
       <span class="lt-meta">${today ? `<span class="fresh"></span>${today} today · ` : ''}${broad.length} ${broad.length === 1 ? 'story' : 'stories'} · latest ${fmt(last)}</span></span>
@@ -3038,7 +3040,7 @@ document.addEventListener('keydown', e => {
    page. When it names a newer build, load that, with ?v= so no cache can hand
    the old page back; the ?v= check stops a reload loop if one somehow does.
    In the claude.ai artifact the fetch fails and nothing happens. */
-const BUILD = 'bd0201790d6a';
+const BUILD = '124520d49376';
 async function checkFresh(){
   if (!/^https?:$/.test(location.protocol)) return;
   try {
