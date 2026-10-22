@@ -531,6 +531,10 @@ span.mini.lens:hover{box-shadow:none}
 .pmv-d{font-family:var(--f-mono);font-size:12px;color:rgba(255,255,255,.8);flex:none;min-width:44px}
 .pmv-rows b{font-weight:600;min-width:0}
 .pmv-dot{width:7px;height:7px;border-radius:50%;background:#fff;flex:none;align-self:center}
+/* A product's mark in a plain page title (products without a briefing). */
+.p-icon{flex:none;width:46px;height:46px;border-radius:14px;display:inline-grid;place-items:center;background:#fff;color:#16172E;vertical-align:middle;
+  box-shadow:0 1px 0 rgba(0,0,0,.06),0 8px 20px -8px color-mix(in oklab,var(--ic) 60%,transparent)}
+.p-icon svg{width:26px;height:26px;display:block}
 
 /* brief.css: briefing card v3. Everything is scoped under .bf2 and every class is
    prefixed b2- so nothing clashes with the radar's own CSS. Uses the radar's :root
@@ -856,6 +860,13 @@ dialog.bf2.b2-sheet::backdrop{background:color-mix(in oklab,#0b0c22 45%,transpar
   height:40px;min-width:40px;padding:0 13px;border-radius:999px;background:var(--card);color:var(--ink);
   box-shadow:0 2px 10px color-mix(in oklab,var(--ink) 16%,transparent)}
 .bf2 .b2-badge svg{display:block;height:17px;width:auto}
+/* A product's mark beside its title, like its Topics tile. */
+.bf2 .b2-titlerow{display:flex;align-items:center;gap:14px;min-width:0}
+.bf2 .b2-titlerow .b2-title{min-width:0}
+.bf2 .b2-icon{flex:none;width:56px;height:56px;border-radius:17px;display:grid;place-items:center;background:#fff;color:#16172E;
+  box-shadow:0 1px 0 rgba(0,0,0,.06),0 8px 20px -8px color-mix(in oklab,var(--ic) 60%,transparent)}
+.bf2 .b2-icon svg{width:32px;height:32px;display:block}
+@media (max-width:480px){.bf2 .b2-icon{width:46px;height:46px;border-radius:14px}.bf2 .b2-icon svg{width:26px;height:26px}}
 
 /* =============================================================================
    lab.css: the lab card ("widgets" design, chosen Oct 2026) for lab.js.
@@ -1317,6 +1328,8 @@ function row(t, opts = {}){
      sinceDays: 7          window for "New this week"
      today:     "YYYY-MM-DD"  reference date for "New this week" (default b.updated)
      afterHead: HTML put right under the header, e.g. a category's product tiles
+     icon:      { svg, accent }: the product's mark, shown in a white tile beside
+                the title (as on its Topics tile)
      only:      a section index: draw just that section, with no header or
                 "New this week" (a category's guide page); every item is still
                 there for links and the sheet
@@ -1534,7 +1547,8 @@ function row(t, opts = {}){
       <span class="b2-blob b2-b1"></span><span class="b2-blob b2-b2"></span><span class="b2-blob b2-b3"></span>
       ${ctx.back ? `<a class="b2-back" href="${esc(ctx.back.href || "#")}">← ${esc(ctx.back.label)}</a>` : ""}
       ${b.logo_svg ? `<span class="b2-badge" aria-hidden="true">${b.logo_svg}</span>` : ""}
-      <h1 class="b2-title">${esc(b.title || ctx.title || b.key)}</h1>
+      ${ctx.icon ? `<div class="b2-titlerow"><span class="b2-icon" style="--ic:${esc(ctx.icon.accent || "var(--c)")}" aria-hidden="true">${ctx.icon.svg}</span><h1 class="b2-title">${esc(b.title || ctx.title || b.key)}</h1></div>`
+        : `<h1 class="b2-title">${esc(b.title || ctx.title || b.key)}</h1>`}
       <div class="b2-stat-row"><p class="b2-stat">${esc(stat)}</p>
         ${ctx.topics ? `<button class="b2-all" type="button" data-bf-stories>All ${ctx.topics} ${ctx.topics === 1 ? "story" : "stories"} →</button>` : ""}</div>
       ${lede ? `<p class="b2-lede">${esc(lede)}</p>` : ""}
@@ -2527,7 +2541,7 @@ function briefPage(key, c, title, back, list, p, afterHead){
   const b = BRIEFS[key], kinds = new Set((b.sections || []).map(s => s.kind));
   const lab = p && (kinds.has('moves') || kinds.has('timeline'));
   return renderBriefing(b, { back, title, topics:list.length, accent:c.v, sinceDays:WINDOW_DAYS, today:SWEEP,
-      moves: lab ? labMoves(p) : [], releases: lab ? labReleases(p) : [], afterHead });
+      moves: lab ? labMoves(p) : [], releases: lab ? labReleases(p) : [], afterHead, icon: p && MARKS[p.id] });
 }
 
 // A lab's card (a briefing with a "moves" section) is drawn by lab.js as a
@@ -2673,7 +2687,11 @@ function prodView(c, p){
   // what changed is why the reader opened the card); the guide follows, and
   // the news tile closes the page.
   if (BRIEFS[bk]?.schema === 3) return briefPage(bk, c, p.name, { label:c.name, href:`#topics.${c.id}` }, list, p, movesCard(c, p)) + prodFoot(c, p, list);
-  return head(c, p.name, c.id, c.name, list) + movesCard(c, p) + briefingHTML(bk, c.v) + prodFoot(c, p, list);
+  // No briefing: the plain header, with the product's mark in place of the
+  // category dot when it has one.
+  const m = MARKS[p.id], top = head(c, p.name, c.id, c.name, list);
+  return (m ? top.replace('<span class="blob"></span>', `<span class="p-icon" style="--ic:${esc(m.accent || `var(${c.v})`)}" aria-hidden="true">${m.svg}</span>`) : top) +
+    movesCard(c, p) + briefingHTML(bk, c.v) + prodFoot(c, p, list);
 }
 // A product page ends in one news tile (Oct 2026: the
 // owner found the full story list at the bottom too long); the list itself
@@ -3159,7 +3177,7 @@ document.addEventListener('keydown', e => {
    page. When it names a newer build, load that, with ?v= so no cache can hand
    the old page back; the ?v= check stops a reload loop if one somehow does.
    In the claude.ai artifact the fetch fails and nothing happens. */
-const BUILD = 'edc70c21375f';
+const BUILD = '353ccce44c33';
 async function checkFresh(){
   if (!/^https?:$/.test(location.protocol)) return;
   try {
