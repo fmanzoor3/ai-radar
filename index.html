@@ -505,8 +505,10 @@ span.mini.lens:hover{box-shadow:none}
    (the briefing's "New this week" strip) widened the whole column instead of
    scrolling: the Coding agents page was 1,099px wide on a 400px phone. */
 .cards-view>*{min-width:0}
-/* A category briefing's tiles block (Coding agents), under its header. */
-.b2-tiles{display:grid;gap:18px;min-width:0;margin-top:6px}
+/* Guide tiles (a category briefing's sections): name over the item count. */
+.lt-guide .lt-tx{display:flex;flex-direction:column;gap:4px;min-width:0}
+/* A guide page has its own title, so the section's heading is hidden. */
+.guide-only .bf2 .b2-top{display:none}
 
 /* brief.css: briefing card v3. Everything is scoped under .bf2 and every class is
    prefixed b2- so nothing clashes with the radar's own CSS. Uses the radar's :root
@@ -1293,6 +1295,9 @@ function row(t, opts = {}){
      sinceDays: 7          window for "New this week"
      today:     "YYYY-MM-DD"  reference date for "New this week" (default b.updated)
      afterHead: HTML put right under the header, e.g. a category's product tiles
+     only:      a section index: draw just that section, with no header or
+                "New this week" (a category's guide page); every item is still
+                there for links and the sheet
    }
 
    ---------------------------------------------------------------------------
@@ -1503,7 +1508,7 @@ function row(t, opts = {}){
        page scrolls to them on [data-bf-stories]); the owner expected "Read
        all" to mean every Claude Code story, not a walk through these lines,
        which the sheet's Prev/Next already gives. */
-    let h = `<header class="b2-hero">
+    let h = ctx.only != null ? "" : `<header class="b2-hero">
       <span class="b2-blob b2-b1"></span><span class="b2-blob b2-b2"></span><span class="b2-blob b2-b3"></span>
       ${ctx.back ? `<a class="b2-back" href="${esc(ctx.back.href || "#")}">← ${esc(ctx.back.label)}</a>` : ""}
       ${b.logo_svg ? `<span class="b2-badge" aria-hidden="true">${b.logo_svg}</span>` : ""}
@@ -1517,7 +1522,7 @@ function row(t, opts = {}){
 
     /* new this week */
     const newOnes = list.filter(e => e.type === "item" && isNew(e.it)).sort((a, c) => T(touched(c.it)) - T(touched(a.it)));
-    if (newOnes.length) h += `<section class="b2-newwk" aria-label="New this week"><div class="b2-strip"><h2 class="b2-h b2-nw-h">New this<br>week</h2>${newOnes.map((e, k) =>
+    if (newOnes.length && ctx.only == null) h += `<section class="b2-newwk" aria-label="New this week"><div class="b2-strip"><h2 class="b2-h b2-nw-h">New this<br>week</h2>${newOnes.map((e, k) =>
       `<button class="b2-fchip" ${attr(e)} style="--nc:${tok(NEW_COLS[k % NEW_COLS.length])}"><span class="b2-spark"></span><b>${esc(e.it.title || e.it.name)}</b><i>${esc(day(e.it.since || e.it.changed))}</i></button>`).join("")}</div></section>`;
 
     /* compare line: under the first "uses" section, else at the top */
@@ -1525,15 +1530,15 @@ function row(t, opts = {}){
     const cmp = list.filter(e => e.compare);
     const cmpLine = cmp.length ? `<div class="b2-vs"><span class="b2-lbl">${esc(b.compare_label || "Compared")}</span>${cmp.map(e =>
       `<button class="b2-vchip" ${attr(e)} style="--vc:${tok(e.color || ctx.accent || "blue")}"><span>${esc(e.title)}</span></button>`).join("")}</div>` : "";
-    if (firstUses < 0 && cmpLine) h += `<section class="b2-sec">${cmpLine}</section>`;
+    if (firstUses < 0 && cmpLine && ctx.only == null) h += `<section class="b2-sec">${cmpLine}</section>`;
 
     /* legacy: bullets shown only when nothing else covers them */
     const plain = list.filter(e => e.type === "point" && !e.compare);
-    if (plain.length && firstUses < 0 && !cmp.length) h += `<section class="b2-sec" aria-label="In short">${head("In short", plain.length)}
+    if (plain.length && firstUses < 0 && !cmp.length && ctx.only == null) h += `<section class="b2-sec" aria-label="In short">${head("In short", plain.length)}
       <ul class="b2-list">${plain.map(e => `<li><button class="b2-row" ${attr(e)}><span>${esc(e.text)}</span></button></li>`).join("")}</ul></section>`;
 
     /* sections, in data order */
-    secs.forEach((s, i) => { h += R[kindOf(s)](s, { E, attr, fresh, head, ctx, byName, op, cl, hint, rid, si: i, after: i === firstUses ? cmpLine : "" }); });
+    secs.forEach((s, i) => { if (ctx.only != null && i !== ctx.only) return; h += R[kindOf(s)](s, { E, attr, fresh, head, ctx, byName, op, cl, hint, rid, si: i, after: i === firstUses ? cmpLine : "" }); });
 
     /* brand: {accent, blobs:[3 colours]}: a lab card's own colours (hex or
        token names) for the accent and the header blobs; same layout as every
@@ -2521,11 +2526,39 @@ function labPage(bk, c, p, list){
 
 function catView(c){
   const list = inCat(c.id);
-  // A category with a briefing (Coding agents): its tiles and news tile sit
-  // right under the briefing's header, ahead of the briefing's sections.
-  if (BRIEFS[c.id]?.schema === 3) return renderBriefing(BRIEFS[c.id], { back:{ label:'All topics', href:'#topics' }, title:c.name,
-    accent:c.v, sinceDays:WINDOW_DAYS, today:SWEEP, afterHead:`<div class="b2-tiles">${catBody(c, list)}</div>` });
+  // A category with a briefing (Coding agents) opens like any other: title,
+  // tiles, news; each briefing section waits behind a Guides tile (Oct 2026:
+  // the owner wanted the page short, each section opened only when wanted).
+  if (BRIEFS[c.id]?.schema === 3) return head(c, c.name, '', 'All topics', list) + catBody(c, list) + guidesOf(c);
   return head(c, c.name, '', 'All topics', list) + briefingHTML(c.id, c.v) + catBody(c, list);
+}
+const GUIDE_GLYPH = {
+  uses:'<circle cx="12" cy="12" r="8.5"/><path d="m15.5 8.5-2 5-5 2 2-5z"/>',
+  lineup:'<rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/>',
+  keys:'<circle cx="8" cy="15" r="4"/><path d="m11 12 8-8M16 7l2.5 2.5M14 9l2 2"/>',
+  prices:'<path d="M3.5 12.5 12 4h7.5v7.5L11 20z"/><circle cx="15.5" cy="8.5" r="1.4"/>',
+  routes:'<path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/>',
+  scale:'<path d="M5 20V13M12 20V8M19 20V4"/>',
+  list:'<path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/>' };
+const GUIDE_COLS = ['blue', 'purple', 'green', 'orange', 'pink', 'aqua'];
+function guidesOf(c){
+  const secs = BRIEFS[c.id].sections || [];
+  if (!secs.length) return '';
+  return `<h3 class="p-sub">Guides</h3><div class="ltiles">${secs.map((s, i) => {
+    const col = s.color && s.color !== 'hot' ? s.color : GUIDE_COLS[i % GUIDE_COLS.length], n = (s.items || []).length;
+    return `<button class="ltile lt-type lt-guide" data-card="${c.id}.guide-${i}" style="--acc:var(--${esc(col)})">
+      <span class="lt-mk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${GUIDE_GLYPH[s.kind] || GUIDE_GLYPH.list}</svg></span>
+      <span class="lt-tx"><span class="lt-nm">${esc(s.label)}</span>${n ? `<span class="lt-meta">${n}</span>` : ''}</span></button>`; }).join('')}</div>`;
+}
+// One guide: the category briefing drawn with only that section (links to
+// items in the other sections still open in the sheet).
+function guideView(c, i){
+  const b = BRIEFS[c.id], s = (b.sections || [])[i];
+  if (!s) return catView(c);
+  return `<button class="back" data-card="${c.id}">← ${esc(c.name)}</button>
+    <h2 class="p-title" style="--c:var(${c.v})"><span class="blob"></span>${esc(s.label)}</h2>
+    <p class="p-stat">${[(s.items || []).length || '', s.note].filter(Boolean).map(esc).join(' · ')}</p>` +
+    `<div class="guide-only">${renderBriefing(b, { accent:c.v, sinceDays:WINDOW_DAYS, today:SWEEP, only:i })}</div>`;
 }
 // A category's product cards. Where some are lab cards (Models & labs), the
 // labs come first as tiles with only their mark and name (Oct 2026: the
@@ -2692,7 +2725,8 @@ function renderTopics(key){
             autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search"></label>
          <div id="search-out" hidden></div>
          <div class="grid" id="cat-grid">${CL.map(catCard).join('')}</div>`
-       : p ? prodView(c, p) : pid === 'news' && c.products.length ? newsView(c) : catView(c);
+       : p ? prodView(c, p) : pid === 'news' && c.products.length ? newsView(c)
+       : /^guide-\d+$/.test(pid || '') && BRIEFS[c.id] ? guideView(c, +pid.slice(6)) : catView(c);
   if (!c) renderSearch();
 }
 document.addEventListener('input', e => { if (e.target.id === 'q') { query = e.target.value; renderSearch(); } });
@@ -3058,7 +3092,7 @@ document.addEventListener('keydown', e => {
    page. When it names a newer build, load that, with ?v= so no cache can hand
    the old page back; the ?v= check stops a reload loop if one somehow does.
    In the claude.ai artifact the fetch fails and nothing happens. */
-const BUILD = '2fd76496ffc3';
+const BUILD = '4ba3c8349f77';
 async function checkFresh(){
   if (!/^https?:$/.test(location.protocol)) return;
   try {
