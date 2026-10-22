@@ -816,7 +816,9 @@ dialog.bf2.b2-sheet::backdrop{background:color-mix(in oklab,#0b0c22 45%,transpar
 
 .lab5{position:relative;font-family:var(--f-body);color:var(--ink);padding-bottom:110px}
 .lab5 *,.l5-sheet *{box-sizing:border-box}
-.lab5 button,.l5-sheet button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:left}
+/* :where() keeps this reset below every class rule: as .l5-sheet button it
+   outranked .l5-card and stripped the story cards' padding and fill. */
+:where(.lab5,.l5-sheet) button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:left}
 .lab5 h1,.lab5 h2,.lab5 h3,.lab5 p,.lab5 ul,.lab5 ol,.l5-sheet h2,.l5-sheet h3,.l5-sheet p,.l5-sheet ul,.l5-sheet ol{margin:0;padding:0}
 .lab5 ul,.lab5 ol,.l5-sheet ul,.l5-sheet ol{list-style:none}
 
@@ -2955,7 +2957,7 @@ document.addEventListener('keydown', e => {
    page. When it names a newer build, load that, with ?v= so no cache can hand
    the old page back; the ?v= check stops a reload loop if one somehow does.
    In the claude.ai artifact the fetch fails and nothing happens. */
-const BUILD = '9065d3492cc3';
+const BUILD = '36cf129238c0';
 async function checkFresh(){
   if (!/^https?:$/.test(location.protocol)) return;
   try {
