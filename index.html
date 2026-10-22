@@ -509,6 +509,28 @@ span.mini.lens:hover{box-shadow:none}
 .lt-guide .lt-tx{display:flex;flex-direction:column;gap:4px;min-width:0}
 /* A guide page has its own title, so the section's heading is hidden. */
 .guide-only .bf2 .b2-top{display:none}
+/* Latest moves (product pages): the newest big update in the product's
+   colour, the next ones as dated rows; each opens its story. */
+.pmv{position:relative;overflow:hidden;border-radius:22px;color:#fff;padding:6px;
+  background:radial-gradient(70% 90% at 100% 0%,color-mix(in srgb,var(--acc) 45%,transparent) 0,transparent 60%),
+    linear-gradient(140deg,color-mix(in oklab,var(--acc) 72%,#000) 0%,color-mix(in oklab,var(--acc) 48%,#000) 100%)}
+.pmv-orb{position:absolute;width:160px;height:160px;border-radius:50%;right:-60px;top:-70px;background:var(--acc);opacity:.35;pointer-events:none}
+.pmv button{all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;border-radius:16px;position:relative}
+.pmv button:focus-visible{outline:2.5px solid #fff;outline-offset:-2px}
+.pmv-top{padding:12px 14px 14px!important}
+.pmv-top:hover .pmv-t{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:4px}
+.pmv-h{display:flex;align-items:center;gap:8px;font-family:var(--f-mono);font-size:11.5px;color:rgba(255,255,255,.88);margin-bottom:6px}
+.pmv-r{margin-left:auto}
+.pmv-bk{font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:999px;background:#fff;color:#C81E3A}
+.pmv-t{display:block;font-family:var(--f-display);font-weight:700;font-size:20px;line-height:1.2;letter-spacing:-.01em;margin-bottom:6px}
+.pmv-p{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font-size:15px;line-height:1.45;color:rgba(255,255,255,.94)}
+.pmv-rows{list-style:none;margin:0;padding:0 8px 4px;display:grid}
+.pmv-rows li+li{border-top:1px solid rgba(255,255,255,.16)}
+.pmv-rows button{display:flex!important;align-items:baseline;gap:12px;padding:10px 6px!important;font-size:14.5px}
+.pmv-rows button:hover b{text-decoration:underline;text-underline-offset:3px}
+.pmv-d{font-family:var(--f-mono);font-size:12px;color:rgba(255,255,255,.8);flex:none;min-width:44px}
+.pmv-rows b{font-weight:600;min-width:0}
+.pmv-dot{width:7px;height:7px;border-radius:50%;background:#fff;flex:none;align-self:center}
 
 /* brief.css: briefing card v3. Everything is scoped under .bf2 and every class is
    prefixed b2- so nothing clashes with the radar's own CSS. Uses the radar's :root
@@ -2295,7 +2317,8 @@ function relatedOf(t){
 // split catBody makes).
 function placeOf(t){
   const cid = HOME[t.slug], ps = t.products.filter(p => PROD[p] && PROD[p].cat === cid);
-  return ps.length === 1 ? `${cid}.${ps[0]}` : CLI[cid]?.products.length ? `${cid}.news` : cid;
+  if (ps.length === 1) return isLabBrief(BRIEFS[`${cid}.${ps[0]}`]) ? `${cid}.${ps[0]}` : `${cid}.${ps[0]}.news`;
+  return CLI[cid]?.products.length ? `${cid}.news` : cid;
 }
 
 function detailHTML(t){
@@ -2504,8 +2527,7 @@ function briefPage(key, c, title, back, list, p){
   const b = BRIEFS[key], kinds = new Set((b.sections || []).map(s => s.kind));
   const lab = p && (kinds.has('moves') || kinds.has('timeline'));
   return renderBriefing(b, { back, title, topics:list.length, accent:c.v, sinceDays:WINDOW_DAYS, today:SWEEP,
-      moves: lab ? labMoves(p) : [], releases: lab ? labReleases(p) : [] }) +
-    `<h2 class="sec-h stories-h" id="stories" tabindex="-1">All stories <span class="n">${list.length}</span></h2>`;
+      moves: lab ? labMoves(p) : [], releases: lab ? labReleases(p) : [] });
 }
 
 // A lab's card (a briefing with a "moves" section) is drawn by lab.js as a
@@ -2616,12 +2638,15 @@ function storiesOf(c, list){
 }
 const NEWS_GLYPH = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h11v16H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1Z"/><path d="M16 9h3a1 1 0 0 1 1 1v8a2 2 0 0 1-2 2h-2"/><path d="M8 8h4M8 12h4M8 16h3"/></svg>`;
 function newsTile(c, broad){
-  if (!broad.length) return '';
-  const last = broad.map(lastDate).sort().pop(), today = broad.filter(t => lastDate(t) === SWEEP).length;
-  return `<h3 class="p-sub">News</h3><button class="ltile lt-news" data-card="${c.id}.news" style="--acc:var(${c.v})">
+  return broad.length ? `<h3 class="p-sub">News</h3>` + newsTileFor(`${c.id}.news`, `News across ${c.name.toLowerCase()}`, broad, `var(${c.v})`) : '';
+}
+function newsTileFor(card, title, list, acc){
+  if (!list.length) return '';
+  const last = list.map(lastDate).sort().pop(), today = list.filter(t => lastDate(t) === SWEEP).length;
+  return `<button class="ltile lt-news" data-card="${esc(card)}" style="--acc:${esc(acc)}">
     <span class="lt-mk">${NEWS_GLYPH}</span>
-    <span class="lt-tx"><span class="lt-nm">News across ${esc(c.name.toLowerCase())}</span>
-      <span class="lt-meta">${today ? `<span class="fresh"></span>${today} today · ` : ''}${broad.length} ${broad.length === 1 ? 'story' : 'stories'} · latest ${fmt(last)}</span></span>
+    <span class="lt-tx"><span class="lt-nm">${esc(title)}</span>
+      <span class="lt-meta">${today ? `<span class="fresh"></span>${today} today · ` : ''}${list.length} ${list.length === 1 ? 'story' : 'stories'} · latest ${fmt(last)}</span></span>
     <span class="lt-go" aria-hidden="true">›</span></button>`;
 }
 function newsView(c){
@@ -2644,8 +2669,47 @@ function prodView(c, p){
   };
   const bk = `${c.id}.${p.id}`;
   if (isLabBrief(BRIEFS[bk])) return labPage(bk, c, p, list);
-  if (BRIEFS[bk]?.schema === 3) return briefPage(bk, c, p.name, { label:c.name, href:`#topics.${c.id}` }, list, p) + prodBody(about, related, relatedRow, p);
-  return head(c, p.name, c.id, c.name, list) + briefingHTML(bk, c.v) + prodBody(about, related, relatedRow, p);
+  if (BRIEFS[bk]?.schema === 3) return briefPage(bk, c, p.name, { label:c.name, href:`#topics.${c.id}` }, list, p) + prodFoot(c, p, list);
+  return head(c, p.name, c.id, c.name, list) + briefingHTML(bk, c.v) + prodFoot(c, p, list);
+}
+// A product page ends in its latest moves and one news tile (Oct 2026: the
+// owner found the full story list at the bottom too long); the list itself
+// is on the product's news page, #topics.CAT.PROD.news.
+function prodFoot(c, p, list){
+  return movesCard(c, p) + `<h3 class="p-sub">News</h3>` + newsTileFor(`${c.id}.${p.id}.news`, `All ${p.name} news`, list, MARKS[p.id]?.accent || `var(${c.v})`);
+}
+function prodNewsView(c, p){
+  const list = inProd(p.id), re = nameRe(p);
+  const about = list.filter(t => re.test(`${t.name} ${t.title}`)), related = list.filter(t => !about.includes(t));
+  const relatedRow = t => {
+    const b = [...t.timeline].sort((x, y) => y.date.localeCompare(x.date)).find(x => re.test(x.delta));
+    return b ? { text: oneLiner(b.delta, 112), date: b.date } : {};
+  };
+  return head(c, `${p.name} news`, `${c.id}.${p.id}`, p.name, list) + prodBody(about, related, relatedRow, p);
+}
+// The product's breaking and notable updates (its own stories and others that
+// name it), newest first, one per story; the plain newest ones when nothing
+// big has happened lately.
+function prodMoves(p){
+  const since = shiftDays(SWEEP, -MOVES_DAYS), seen = new Set();
+  const pick = big => beatsFor(p).filter(x => (!big || ['breaking', 'notable'].includes(x.b.impact)) && x.b.date > since)
+    .filter(x => !seen.has(x.t.slug) && seen.add(x.t.slug));
+  let out = pick(true); if (!out.length) { seen.clear(); out = pick(false); }
+  return out.slice(0, 4).map(x => ({ slug:x.t.slug, title:x.t.name, text:oneLiner(x.b.delta, 160), date:x.b.date, impact:x.b.impact }));
+}
+const agoText = d => { const n = Math.round((new Date(SWEEP + 'T12:00:00Z') - new Date(d + 'T12:00:00Z')) / 864e5);
+  return n <= 0 ? 'today' : n === 1 ? 'yesterday' : n < 14 ? `${n} days ago` : fmt(d); };
+const BOLT = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 3 5 13.5h6L10 21l8-10.5h-6z"/></svg>';
+function movesCard(c, p){
+  const mv = prodMoves(p); if (!mv.length) return '';
+  const [m0, ...rest] = mv, at = ` data-place="${esc(`${c.id}.${p.id}.news`)}"`;
+  return `<h3 class="p-sub">Latest moves</h3><section class="pmv" style="--acc:${esc(MARKS[p.id]?.accent || `var(${c.v})`)}" aria-label="Latest moves">
+    <span class="pmv-orb"></span>
+    <button class="pmv-top" data-go="${esc(m0.slug)}"${at}>
+      <span class="pmv-h">${BOLT}${m0.impact === 'breaking' ? '<span class="pmv-bk">Breaking</span>' : ''}<span class="pmv-r">${esc(agoText(m0.date))}</span></span>
+      <span class="pmv-t">${esc(m0.title)}</span><span class="pmv-p">${esc(m0.text)}</span></button>
+    ${rest.length ? `<ul class="pmv-rows">${rest.map(m => `<li><button data-go="${esc(m.slug)}"${at}><span class="pmv-d">${esc(fmt(m.date))}</span><b>${esc(m.title)}</b>${m.impact === 'breaking' ? '<span class="pmv-dot" title="Breaking"></span>' : ''}</button></li>`).join('')}</ul>` : ''}
+  </section>`;
 }
 function prodBody(about, related, relatedRow, p){
   return (about.length ? `<h3 class="p-sub">About ${esc(p.name)}</h3>${rowsOf(about)}` : '') +
@@ -2717,7 +2781,7 @@ function renderSearch(){
 const SEARCH_ICON = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg>';
 
 function renderTopics(key){
-  const [cid, pid] = (key || '').split('.');
+  const [cid, pid, sub] = (key || '').split('.');
   const c = CLI[cid], p = c && c.products.find(x => x.id === pid);
   document.getElementById('cards').innerHTML =
     !c ? `<label class="search">${SEARCH_ICON}<input id="q" type="search" value="${esc(query)}"
@@ -2725,7 +2789,7 @@ function renderTopics(key){
             autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search"></label>
          <div id="search-out" hidden></div>
          <div class="grid" id="cat-grid">${CL.map(catCard).join('')}</div>`
-       : p ? prodView(c, p) : pid === 'news' && c.products.length ? newsView(c)
+       : p ? (sub === 'news' && !isLabBrief(BRIEFS[`${c.id}.${p.id}`]) ? prodNewsView(c, p) : prodView(c, p)) : pid === 'news' && c.products.length ? newsView(c)
        : /^guide-\d+$/.test(pid || '') && BRIEFS[c.id] ? guideView(c, +pid.slice(6)) : catView(c);
   if (!c) renderSearch();
 }
@@ -3092,7 +3156,7 @@ document.addEventListener('keydown', e => {
    page. When it names a newer build, load that, with ?v= so no cache can hand
    the old page back; the ?v= check stops a reload loop if one somehow does.
    In the claude.ai artifact the fetch fails and nothing happens. */
-const BUILD = 'd8caa1cacac5';
+const BUILD = 'a295a43c6e78';
 async function checkFresh(){
   if (!/^https?:$/.test(location.protocol)) return;
   try {
@@ -3135,6 +3199,7 @@ document.addEventListener('click', e => {
   if (e.target.closest('[data-theme-toggle]')) { toggleTheme(); return; }
   // The briefing header's "All N stories" button: the news list under it.
   if (e.target.closest('[data-bf-stories]')) {
+    const n = document.querySelector('#cards .lt-news[data-card]'); if (n) { go('topics.' + n.dataset.card); return; }
     const h = document.getElementById('stories');
     if (h) { h.scrollIntoView({ block:'start', behavior: reduced ? 'auto' : 'smooth' }); h.focus({ preventScroll:true }); }
     return;
@@ -3171,7 +3236,9 @@ document.addEventListener('click', e => {
   const cl = e.target.closest('[data-close]'); if (cl) { closeCard(cl.closest('.story, .row').querySelector(':scope > [data-expand]')); return; }
   const ol = e.target.closest('[data-older]'); if (ol) { document.getElementById('older').hidden = false; ol.remove(); return; }
   const cd = e.target.closest('[data-card]'); if (cd) { go('topics' + (cd.dataset.card ? '.' + cd.dataset.card : '')); return; }
-  const g = e.target.closest('[data-go]'); if (g) { pending = g.dataset.go; go('topics.' + placeOf(T[g.dataset.go])); }
+  // data-place: open the story there instead of its home (a product's moves
+  // open on that product's news page, where the story is listed too).
+  const g = e.target.closest('[data-go]'); if (g) { pending = g.dataset.go; go('topics.' + (g.dataset.place || placeOf(T[g.dataset.go]))); }
 });
 
 renderLatest();
