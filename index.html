@@ -298,6 +298,18 @@ span.mini.lens:hover{box-shadow:none}
   .ltile:has(.st) .lt-mk{grid-row:1/3}
 }
 .p-note{text-transform:none;letter-spacing:0;margin-left:6px;opacity:.85}
+/* The news tile under a category's cards: the category's broad stories are
+   one tap away instead of a loose list. A row at every width. */
+.ltile.lt-news{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;column-gap:14px;width:100%;
+  padding:14px 18px 14px 14px;background:color-mix(in oklab,var(--acc) var(--tint,16%),var(--card))}
+.lt-news .lt-mk{background:var(--acc);color:#fff;width:46px;height:46px;border-radius:14px}
+.lt-news .lt-mk svg{width:24px;height:24px}
+.lt-tx{display:flex;flex-direction:column;gap:4px;min-width:0}
+.lt-news .lt-nm{font-size:17px}
+.lt-meta{font-family:var(--f-mono);font-size:12px;color:var(--ink-2)}
+.lt-meta .fresh{margin-right:5px}
+.lt-go{font-size:26px;line-height:1;color:var(--ink-2)}
+@media (max-width:639px){.ltile.lt-news{grid-template-columns:auto minmax(0,1fr) auto;padding:12px 14px 12px 12px}.lt-news .lt-nm{font-size:15.5px}}
 .empty-note{display:grid;gap:4px;padding:16px 18px;border-radius:20px;
   border:2px dashed color-mix(in oklab,var(--ink) 35%,transparent);color:var(--ink-2);font-size:14px}
 .empty-note b{font-family:var(--f-display);font-weight:600;color:var(--ink)}
@@ -2267,11 +2279,12 @@ function relatedOf(t){
     .sort((a, b) => b.w - a.w || byRecent(a.u, b.u)).slice(0, RELATED_N).map(x => x.u);
 }
 // Where a topic lives on the Topics tab: its product's card when it is about
-// exactly one product in its home category, the category page otherwise
-// (the same split catView makes).
+// exactly one product in its home category, otherwise the category's news
+// page when the category has product cards, else the category page (the same
+// split catBody makes).
 function placeOf(t){
-  const ps = t.products.filter(p => PROD[p] && PROD[p].cat === HOME[t.slug]);
-  return ps.length === 1 ? `${HOME[t.slug]}.${ps[0]}` : HOME[t.slug];
+  const cid = HOME[t.slug], ps = t.products.filter(p => PROD[p] && PROD[p].cat === cid);
+  return ps.length === 1 ? `${cid}.${ps[0]}` : CLI[cid]?.products.length ? `${cid}.news` : cid;
 }
 
 function detailHTML(t){
@@ -2528,18 +2541,39 @@ function cardsOf(c){
       <div class="ltiles">${types.map(p => tile(c, p)).join('')}</div>` : '');
 }
 function catBody(c, list){
-  // Broad = names none of this category's product cards, or several of them.
-  // A story about exactly one product lives on that product's card instead.
+  // A category with product cards keeps its broad stories behind one news
+  // tile under the cards (Oct 2026: the loose list there read as messy).
+  if (c.products.length) return cardsOf(c) + newsTile(c, broadOf(c, list));
+  return storiesOf(c, list) +
+    (c.id === 'memory' && !list.some(isPaper) ? `<div class="empty-note"><b>RAG papers</b><span>None logged yet. New research lands here with a dashed outline until something ships.</span></div>` : '');
+}
+// Broad = names none of this category's product cards, or several of them.
+// A story about exactly one product lives on that product's card instead.
+function broadOf(c, list){
   const mine = new Set(c.products.map(p => p.id));
-  const broad = c.products.length ? list.filter(t => t.products.filter(p => mine.has(p)).length !== 1) : list;
-  const facts = broad.filter(t => !isPaper(t)), papers = broad.filter(isPaper);
+  return list.filter(t => t.products.filter(p => mine.has(p)).length !== 1);
+}
+function storiesOf(c, list){
+  const facts = list.filter(t => !isPaper(t)), papers = list.filter(isPaper);
   // Good practices reads as a list of things to do: each row leads with the
   // takeaway (`why`) and names the news behind it. Open a row for the story.
   const asTip = c.id === 'practice' ? t => ({ text: t.why || t.brief, meta: t.name }) : null;
-  return (c.products.length ? cardsOf(c) + `<h3 class="p-sub">Across ${esc(c.name.toLowerCase())}</h3>` : '') +
-    (facts.length ? rowsOf(facts, asTip) : `<p class="quiet">Everything here is about one product. Open its card above.</p>`) +
-    (papers.length ? `<h3 class="p-sub">On paper · not settled yet</h3>${rowsOf(papers)}` : '') +
-    (c.id === 'memory' && !list.some(isPaper) ? `<div class="empty-note"><b>RAG papers</b><span>None logged yet. New research lands here with a dashed outline until something ships.</span></div>` : '');
+  return (facts.length ? rowsOf(facts, asTip) : '') +
+    (papers.length ? `<h3 class="p-sub">On paper · not settled yet</h3>${rowsOf(papers)}` : '');
+}
+const NEWS_GLYPH = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h11v16H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1Z"/><path d="M16 9h3a1 1 0 0 1 1 1v8a2 2 0 0 1-2 2h-2"/><path d="M8 8h4M8 12h4M8 16h3"/></svg>`;
+function newsTile(c, broad){
+  if (!broad.length) return '';
+  const last = broad.map(lastDate).sort().pop(), today = broad.filter(t => lastDate(t) === SWEEP).length;
+  return `<button class="ltile lt-news" data-card="${c.id}.news" style="--acc:var(${c.v})">
+    <span class="lt-mk">${NEWS_GLYPH}</span>
+    <span class="lt-tx"><span class="lt-nm">News across ${esc(c.name.toLowerCase())}</span>
+      <span class="lt-meta">${today ? `<span class="fresh"></span>${today} today · ` : ''}${broad.length} ${broad.length === 1 ? 'story' : 'stories'} · latest ${fmt(last)}</span></span>
+    <span class="lt-go" aria-hidden="true">›</span></button>`;
+}
+function newsView(c){
+  const broad = broadOf(c, inCat(c.id));
+  return head(c, `News across ${c.name.toLowerCase()}`, c.id, c.name, broad) + storiesOf(c, broad);
 }
 
 function prodView(c, p){
@@ -2638,7 +2672,7 @@ function renderTopics(key){
             autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search"></label>
          <div id="search-out" hidden></div>
          <div class="grid" id="cat-grid">${CL.map(catCard).join('')}</div>`
-       : p ? prodView(c, p) : catView(c);
+       : p ? prodView(c, p) : pid === 'news' && c.products.length ? newsView(c) : catView(c);
   if (!c) renderSearch();
 }
 document.addEventListener('input', e => { if (e.target.id === 'q') { query = e.target.value; renderSearch(); } });
@@ -3004,7 +3038,7 @@ document.addEventListener('keydown', e => {
    page. When it names a newer build, load that, with ?v= so no cache can hand
    the old page back; the ?v= check stops a reload loop if one somehow does.
    In the claude.ai artifact the fetch fails and nothing happens. */
-const BUILD = 'fa3363dca3d1';
+const BUILD = 'bd0201790d6a';
 async function checkFresh(){
   if (!/^https?:$/.test(location.protocol)) return;
   try {
