@@ -2526,10 +2526,10 @@ function labPage(bk, c, p, list){
 
 function catView(c){
   const list = inCat(c.id);
-  // A category with a briefing (Coding agents) opens like any other: title,
-  // tiles, news; each briefing section waits behind a Guides tile (Oct 2026:
+  // A category with a briefing (Coding agents) opens with its title, then
+  // tiles, a Guides tile per briefing section, then news (Oct 2026:
   // the owner wanted the page short, each section opened only when wanted).
-  if (BRIEFS[c.id]?.schema === 3) return head(c, c.name, '', 'All topics', list) + catBody(c, list) + guidesOf(c);
+  if (BRIEFS[c.id]?.schema === 3) return head(c, c.name, '', 'All topics', list) + cardsOf(c) + guidesOf(c) + newsTile(c, broadOf(c, list));
   return head(c, c.name, '', 'All topics', list) + briefingHTML(c.id, c.v) + catBody(c, list);
 }
 const GUIDE_GLYPH = {
@@ -2545,10 +2545,10 @@ function guidesOf(c){
   const secs = BRIEFS[c.id].sections || [];
   if (!secs.length) return '';
   return `<h3 class="p-sub">Guides</h3><div class="ltiles">${secs.map((s, i) => {
-    const col = s.color && s.color !== 'hot' ? s.color : GUIDE_COLS[i % GUIDE_COLS.length], n = (s.items || []).length;
+    const col = s.color && s.color !== 'hot' ? s.color : GUIDE_COLS[i % GUIDE_COLS.length];
     return `<button class="ltile lt-type lt-guide" data-card="${c.id}.guide-${i}" style="--acc:var(--${esc(col)})">
       <span class="lt-mk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${GUIDE_GLYPH[s.kind] || GUIDE_GLYPH.list}</svg></span>
-      <span class="lt-tx"><span class="lt-nm">${esc(s.label)}</span>${n ? `<span class="lt-meta">${n}</span>` : ''}</span></button>`; }).join('')}</div>`;
+      <span class="lt-nm">${esc(s.label)}</span></button>`; }).join('')}</div>`;
 }
 // One guide: the category briefing drawn with only that section (links to
 // items in the other sections still open in the sheet).
@@ -2557,7 +2557,7 @@ function guideView(c, i){
   if (!s) return catView(c);
   return `<button class="back" data-card="${c.id}">← ${esc(c.name)}</button>
     <h2 class="p-title" style="--c:var(${c.v})"><span class="blob"></span>${esc(s.label)}</h2>
-    <p class="p-stat">${[(s.items || []).length || '', s.note].filter(Boolean).map(esc).join(' · ')}</p>` +
+    ${s.note ? `<p class="p-stat">${esc(s.note)}</p>` : ''}` +
     `<div class="guide-only">${renderBriefing(b, { accent:c.v, sinceDays:WINDOW_DAYS, today:SWEEP, only:i })}</div>`;
 }
 // A category's product cards. Where some are lab cards (Models & labs), the
@@ -3092,7 +3092,7 @@ document.addEventListener('keydown', e => {
    page. When it names a newer build, load that, with ?v= so no cache can hand
    the old page back; the ?v= check stops a reload loop if one somehow does.
    In the claude.ai artifact the fetch fails and nothing happens. */
-const BUILD = '4ba3c8349f77';
+const BUILD = 'd8caa1cacac5';
 async function checkFresh(){
   if (!/^https?:$/.test(location.protocol)) return;
   try {
