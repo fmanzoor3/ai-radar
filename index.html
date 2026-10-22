@@ -3462,8 +3462,20 @@ function catView(c, view, open){
   // A category with a briefing (Coding agents) opens with its title, then
   // tiles, a Guides tile per briefing section, then news (Oct 2026:
   // the owner wanted the page short, each section opened only when wanted).
-  if (BRIEFS[c.id]?.schema === 3) return head(c, c.name, '', 'All topics', list) + cardsOf(c) + guidesOf(c) + newsTile(c, broadOf(c, list));
-  return head(c, c.name, '', 'All topics', list) + briefingHTML(c.id, c.v) + catBody(c, list);
+  // Categories with product cards (Coding agents, Models & labs) open with
+  // their Latest moves, as product pages do (Oct 2026).
+  const moves = c.products.length ? catMovesCard(c) : '';
+  if (BRIEFS[c.id]?.schema === 3) return head(c, c.name, '', 'All topics', list) + moves + cardsOf(c) + guidesOf(c) + newsTile(c, broadOf(c, list));
+  return head(c, c.name, '', 'All topics', list) + moves + briefingHTML(c.id, c.v) + catBody(c, list);
+}
+// A category's moves card takes the colour of its top story's own product or
+// lab (Anthropic's clay, Codex's green), else the category's: Models & labs'
+// grey made a flat card. Each story opens where it lives (placeOf).
+function catMovesCard(c){
+  const mv = catMoves(c); if (!mv.length) return '';
+  const accentOf = pid => MARKS[pid]?.accent || BRIEFS[`${c.id}.${pid}`]?.brand?.accent;
+  const acc = (T[mv[0].slug]?.products || []).map(accentOf).find(Boolean) || `var(${c.v})`;
+  return `<h3 class="p-sub">Latest moves</h3>${movesHTML(mv, acc, '')}`;
 }
 const GUIDE_GLYPH = {
   uses:'<circle cx="12" cy="12" r="8.5"/><path d="m15.5 8.5-2 5-5 2 2-5z"/>',
@@ -4100,7 +4112,7 @@ document.addEventListener('keydown', e => {
    page. When it names a newer build, load that, with ?v= so no cache can hand
    the old page back; the ?v= check stops a reload loop if one somehow does.
    In the claude.ai artifact the fetch fails and nothing happens. */
-const BUILD = '01f59825de7c';
+const BUILD = '1b4a67b61065';
 async function checkFresh(){
   if (!/^https?:$/.test(location.protocol)) return;
   try {
