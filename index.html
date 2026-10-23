@@ -1539,22 +1539,76 @@ details.sk-more[open]>summary::before{content:"− "}
 .mc-mode{display:inline-flex;gap:2px;background:var(--sk-sunk);border-radius:10px;padding:3px}
 .mc-mode button{border:0;background:transparent;border-radius:8px;padding:6px 12px;font:700 12.5px/1 var(--f-display);color:var(--ink-2);cursor:pointer}
 .mc-mode button[aria-pressed="true"]{background:var(--card);color:var(--ink);box-shadow:0 1px 3px color-mix(in srgb,var(--ink) 18%,transparent)}
-.mc-chain{display:grid;gap:0}
-.mc-node{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:center;padding:10px 12px 10px 10px;border-radius:18px;min-width:0;
-  background:color-mix(in oklab,var(--c) 10%,var(--card));box-shadow:inset 0 0 0 1.5px color-mix(in oklab,var(--c) 28%,transparent)}
-.mc-node:hover{background:color-mix(in oklab,var(--c) 15%,var(--card))}
-.mc-node.sk-sel{box-shadow:inset 0 0 0 2px var(--c)}
+/* The diagram: zones (dashed boxes) say where each part runs; links carry
+   their transport; the example's step lights parts and runs a dot along the
+   links (backwards on the way home). */
+.mc-dia{background:var(--card);border-radius:20px;padding:14px;display:grid;gap:14px;min-width:0}
+.mc-chain{display:flex;flex-direction:column;align-items:stretch;min-width:0}
+.mc-zone{position:relative;border:1.5px dashed color-mix(in srgb,var(--ink-2) 45%,transparent);border-radius:18px;padding:22px 10px 10px;min-width:0;margin-top:8px}
+.mc-zone-open{border-color:transparent;padding:0;margin-top:0}
+.mc-zl{position:absolute;top:-10px;left:14px;background:var(--card);padding:0 6px;font:600 10.5px/18px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+.mc-zin{display:flex;flex-direction:column;align-items:stretch;min-width:0}
+.mc-node{all:unset;box-sizing:border-box;cursor:pointer;display:grid;gap:10px;padding:10px 12px 10px 10px;border-radius:16px;min-width:0;transition:box-shadow .2s,background .2s;
+  background:color-mix(in oklab,var(--c) 9%,var(--card));box-shadow:inset 0 0 0 1.5px color-mix(in oklab,var(--c) 26%,transparent)}
+.mc-nh{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:center;min-width:0}
+.mc-node:hover{background:color-mix(in oklab,var(--c) 14%,var(--card))}
+.mc-node.mc-hot{background:color-mix(in oklab,var(--c) 18%,var(--card));box-shadow:inset 0 0 0 2px var(--c),0 8px 22px -12px var(--c)}
+.mc-node.sk-sel{box-shadow:inset 0 0 0 2.5px var(--c)}
 .mc-node:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
-.mc-link{display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 0;font:600 11.5px/1.2 var(--f-mono);color:var(--ink-2);text-align:center}
-.mc-link i{width:2px;height:10px;background:var(--line);border-radius:1px}
-.mc-link span{background:var(--card);border-radius:999px;padding:4px 10px;box-shadow:inset 0 0 0 1.5px var(--line)}
+.mc-pills{display:flex;flex-wrap:wrap;gap:6px}
+.mc-pill{display:grid;gap:1px;padding:6px 8px;border-radius:10px;background:var(--card);font:400 11.5px/1.2 var(--f-body);color:var(--muted);text-align:left;transition:background .2s;flex:1 0 auto;overflow-wrap:normal}
+.mc-pill b{font:700 12.5px/1.2 var(--f-display);color:var(--ink)}
+.mc-pill.mc-hot{background:var(--c);color:#fff}
+.mc-pill.mc-hot b{color:#fff}
+.mc-link{position:relative;display:flex;flex-direction:column;align-items:center;font:600 11.5px/1.2 var(--f-mono);color:var(--ink-2);text-align:center}
+.mc-link i{position:relative;width:2px;height:12px;background:var(--line);overflow:hidden}
+.mc-link>span{display:inline-flex;align-items:center;gap:5px;background:var(--card);border-radius:999px;padding:4px 10px;box-shadow:inset 0 0 0 1.5px var(--line);transition:box-shadow .2s,color .2s}
+.mc-link svg{width:12px;height:12px;flex:none}
+.mc-lock>span{color:var(--green)}
+.mc-link.mc-hot i{background:var(--ink-2)}
+.mc-link.mc-hot>span{box-shadow:inset 0 0 0 2px var(--ink);color:var(--ink)}
+.mc-link.mc-hot i::after{content:"";position:absolute;left:-2px;width:6px;height:6px;border-radius:50%;background:var(--ink);animation:mc-down .9s linear infinite}
+.mc-link.mc-back i::after{animation-name:mc-up}
+@keyframes mc-down{from{top:-6px}to{top:100%}}
+@keyframes mc-up{from{top:100%}to{top:-6px}}
+@keyframes mc-right{from{left:-6px}to{left:100%}}
+@keyframes mc-left{from{left:100%}to{left:-6px}}
+.mc-walk{display:grid;gap:8px;border-top:1px solid var(--sk-hair);padding-top:12px}
+.mc-ex{font:600 11px/1.3 var(--f-mono);letter-spacing:.04em;color:var(--muted)}
+.mc-wrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center}
+/* Two lines kept for the caption, so the diagram does not jump as it changes. */
+.mc-wrow p{font-size:15px;line-height:1.4;color:var(--ink);display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px;align-items:baseline;min-height:2.8em}
+.mc-wrow p b{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--yellow);color:var(--mc-on-y);font:700 12px/1 var(--f-display)}
+.mc-wrow p span{animation:mc-in .35s ease-out}
+@keyframes mc-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.mc-play{flex:none;width:36px;height:36px;border-radius:50%;border:0;cursor:pointer;display:grid;place-items:center;background:var(--sk-sunk);color:var(--ink)}
+.mc-play svg{width:16px;height:16px}
+.mc-play:hover{background:color-mix(in srgb,var(--yellow) 35%,var(--sk-sunk))}
+/* Progress: one bar per step; the current one fills while it plays. */
+.mc-dots{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:5px}
+.mc-dots i{position:relative;height:4px;border-radius:2px;background:var(--line);overflow:hidden}
+.mc-dots i.mc-done{background:var(--ink-2)}
+.mc-dots i.mc-on::after{content:"";position:absolute;inset:0;border-radius:2px;background:var(--ink-2)}
+.mc-playing .mc-dots i.mc-on::after{transform-origin:left;animation:mc-fill var(--mc-step) linear both}
+@keyframes mc-fill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.mc-tap{font-size:13.5px;color:var(--muted);margin-top:-2px!important}
 @media (min-width:760px){
-  .mc-chain{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) auto minmax(0,1fr);align-items:center}
-  .mc-node{grid-template-columns:1fr;justify-items:start;gap:10px;padding:14px;height:100%}
-  .mc-link{flex-direction:row;padding:0 4px}
-  .mc-link i{width:10px;height:2px}
-  .mc-link span{max-width:13ch}
+  .mc-chain,.mc-zin{flex-direction:row;align-items:center}
+  .mc-chain{align-items:stretch}
+  .mc-zone{flex:1 1 0;display:flex;padding:24px 12px 12px;margin-top:0}
+  .mc-zone-open{flex:0 1 230px;padding:0;align-items:center}
+  .mc-zin{flex:1;align-items:center}
+  .mc-zin>.mc-node{flex:1 1 0}
+  .mc-zin>.mc-link,.mc-chain>.mc-link{align-self:center}
+  .mc-local .mc-zone:first-child,.mc-remote .mc-zone:last-child{flex:2.4 1 0}
+  .mc-node{align-content:start}
+  .mc-link{flex-direction:row}
+  .mc-link i{width:14px;height:2px}
+  .mc-link>span{max-width:15ch}
+  .mc-link.mc-hot i::after{top:-2px;animation-name:mc-right}
+  .mc-link.mc-back i::after{animation-name:mc-left}
 }
+@media (prefers-reduced-motion:reduce){.mc-link.mc-hot i::after{display:none}.mc-node,.mc-pill{transition:none}.mc-wrow p span{animation:none}}
 #mc-fit .sk-wd{margin-top:4px}
 @media (min-width:760px){#mc-fit .sk-wd{position:static}}
 #mc-uses .sk-uca{color:var(--ink)}
@@ -3338,7 +3392,7 @@ ${kb("hooks:")}  <span class="sk-cm"># rules that must always hold</span>
     systems: '<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/>' };
 
   /* ---------- state ---------- */
-  const S = { node: 1, mode: "local", q: "", trust: "all", cat: "all", ag: "all", open: null, fOpen: false, pick: {}, reveal: {},
+  const S = { node: -1, step: 0, play: !matchMedia("(prefers-reduced-motion: reduce)").matches, mode: "local", q: "", trust: "all", cat: "all", ag: "all", open: null, fOpen: false, pick: {}, reveal: {},
               route: -1, agent: 0, lang: "ts", addAg: "claude", key: 0, rules: new Set() };
   let C = null, E = [], byId = {}, B = {};
 
@@ -3365,25 +3419,89 @@ ${kb("hooks:")}  <span class="sk-cm"># rules that must always hold</span>
   }
 
   /* ---------- overview: How it fits, then MCP or something lighter ---------- */
-  // Agent → server → your systems, local or remote. The two modes change only
-  // what the links say (from the overview items: stdio vs streamable HTTP and
-  // OAuth; env-var keys vs an OAuth grant); a node opens its item below.
-  const MODE = {
-    local: { l1: "stdio", n0: "starts the server itself", n1: "a process that runs as you", l2: "keys from your env vars", n2: "files, databases, APIs" },
-    remote: { l1: "HTTP + OAuth", n0: "connects by URL", n1: "a hosted service many share", l2: "acts with your OAuth grant", n2: "SaaS apps, cloud APIs" } };
+  // Oct 2026 (the owner: "visually improve this to help the user understand"):
+  // a picture of where things run, and an example to step through.
+  // Local: your agent and the server share one box, "Your computer" (a stdio
+  // server is a process the agent starts, running as you); your systems sit
+  // outside it. Remote: only the agent is on your computer; the server sits
+  // with the vendor's app in their cloud, reached over HTTPS with an OAuth
+  // sign-in. Each step of the example lights the parts it is about, and a
+  // returning step runs the links backwards. A part opens its item below.
+  const FLOW = {
+    local: {
+      zones: [{ label: "Your computer", parts: ["n0", "l1", "n1"] }, "l2", { label: "", parts: ["n2"] }],
+      l1: "stdio", l2: "API calls with your keys",
+      n0: "Claude Code, Codex, Cursor…", n1: "a process that runs as you", n2: "files, databases, APIs",
+      ask: "Which tables have no index?",
+      steps: [[["n0"], "You ask your agent a question."],
+              [["l1", "n1", "tool"], "It picks a tool from the server, here a query tool, and calls it."],
+              [["l2", "n2"], "The server runs the query on your database, using keys from your env vars."],
+              [["l2", "l1", "n0"], "The rows come back as the tool's result, and the agent answers you.", true]] },
+    remote: {
+      zones: [{ label: "Your computer", parts: ["n0"] }, "l1", { label: "The vendor's cloud", parts: ["n1", "l2", "n2"] }],
+      l1: "HTTPS · OAuth sign-in", l2: "with your access",
+      n0: "Claude Code, Codex, Cursor…", n1: "hosted by the vendor", n2: "their app, e.g. your tracker",
+      ask: "Which issues block the release?",
+      steps: [[["n0"], "You ask your agent a question."],
+              [["l1", "n1", "tool"], "It calls the server's search tool over HTTPS, signed in once with OAuth."],
+              [["l2", "n2"], "The server looks it up in the vendor's app, seeing only what your account can see."],
+              [["l2", "l1", "n0"], "The issues come back as the tool's result, and the agent answers you.", true]] } };
+  const PILLS = [["tool", "Tools", "actions"], ["res", "Resources", "data"], ["pr", "Prompts", "commands"]];
+  // The example plays by itself (the owner, Oct 2026: "instead of a slide show
+  // could we have it playing as an animation"), one step every STEP_MS, round
+  // and round, with a pause button; it starts paused when the reader asks for
+  // reduced motion. A tick changes classes in place (paintWalk), so the
+  // highlights fade rather than the diagram being redrawn.
+  const STEP_MS = 2800;
+  const PLAY = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg>';
+  const PAUSE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 5.5h3v13h-3zM13.5 5.5h3v13h-3z" fill="currentColor"/></svg>';
+  const capHTML = st => `<b>${S.step + 1}</b><span>${esc(st[1])}</span>`;
+  const dotsHTML = f => f.steps.map((_, i) => `<i class="${i < S.step ? "mc-done" : i === S.step ? "mc-on" : ""}"></i>`).join("");
+  function paintWalk() {
+    const f = FLOW[S.mode], st = f.steps[S.step], hot = new Set(st[0]), back = !!st[2];
+    document.querySelectorAll("#mc-fit [data-mc-part]").forEach(el => {
+      const on = hot.has(el.dataset.mcPart);
+      el.classList.toggle("mc-hot", on);
+      if (el.classList.contains("mc-link")) el.classList.toggle("mc-back", on && back);
+    });
+    const cap = document.getElementById("mc-cap"), dots = document.getElementById("mc-dots");
+    if (cap) cap.innerHTML = capHTML(st);
+    if (dots) dots.innerHTML = dotsHTML(f);
+  }
+  let walkT = null;
+  function startWalk() {
+    if (walkT) return;
+    walkT = setInterval(() => {
+      if (!document.getElementById("mc-fit")) { clearInterval(walkT); walkT = null; return; }
+      if (!S.play || document.hidden) return;
+      S.step = (S.step + 1) % FLOW[S.mode].steps.length; paintWalk();
+    }, STEP_MS);
+  }
+  const LOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
   function fitHTML() {
     const xs = B.overview.what || []; if (xs.length < 3) return "";
-    const m = MODE[S.mode], sel = xs[S.node] || xs[0], ic = ["client", "server", "systems"];
-    const node = i => `<button type="button" class="mc-node${i === S.node ? " sk-sel" : ""}" data-mc-node="${i}" aria-pressed="${i === S.node}" style="--c:${RC[xs[i].color] || "var(--yellow)"}">
-        ${svgIc(ICON[ic[i]])}<span class="sk-lyt"><b>${esc(xs[i].name === "MCP client" ? "Your agent" : xs[i].name)}</b><span>${esc(m["n" + i])}</span></span></button>`;
-    const link = k => `<span class="mc-link" aria-hidden="true"><i></i><span>${esc(m[k])}</span><i></i></span>`;
+    const f = FLOW[S.mode], st = f.steps[S.step] || f.steps[0], hot = new Set(st[0]), back = !!st[2];
+    const ic = ["client", "server", "systems"], sel = S.node >= 0 ? xs[S.node] : null;
+    const node = i => `<button type="button" class="mc-node${i === S.node ? " sk-sel" : ""}${hot.has("n" + i) ? " mc-hot" : ""}" data-mc-node="${i}" data-mc-part="n${i}" aria-pressed="${i === S.node}" style="--c:${RC[xs[i].color] || "var(--yellow)"}">
+        <span class="mc-nh">${svgIc(ICON[ic[i]])}<span class="sk-lyt"><b>${esc(xs[i].name === "MCP client" ? "Your agent" : xs[i].name)}</b><span>${esc(f["n" + i])}</span></span></span>
+        ${i === 1 ? `<span class="mc-pills">${PILLS.map(([k, l, s]) => `<span class="mc-pill${hot.has(k) ? " mc-hot" : ""}" data-mc-part="${k}"><b>${l}</b>${s}</span>`).join("")}</span>` : ""}</button>`;
+    const lock = k => k === "l1" && S.mode === "remote";
+    const link = k => `<span class="mc-link${hot.has(k) ? " mc-hot" + (back ? " mc-back" : "") : ""}${lock(k) ? " mc-lock" : ""}" data-mc-part="${k}" aria-hidden="true"><i></i><span>${lock(k) ? LOCK : ""}${esc(f[k])}</span><i></i></span>`;
+    const part = p => p[0] === "n" ? node(+p[1]) : link(p);
+    const zone = z => typeof z === "string" ? link(z)
+      : `<div class="mc-zone${z.label ? "" : " mc-zone-open"}">${z.label ? `<span class="mc-zl">${esc(z.label)}</span>` : ""}<div class="mc-zin">${z.parts.map(part).join("")}</div></div>`;
     return `<section class="sk-sec" id="mc-fit"><div class="mc-fith"><h3 class="sk-eb">How it fits</h3>
         <div class="mc-mode" role="group" aria-label="Where the server runs">${[["local", "Local"], ["remote", "Remote"]].map(([k, l]) =>
           `<button type="button" data-mc-mode="${k}" aria-pressed="${S.mode === k}">${l}</button>`).join("")}</div></div>
-      <div class="mc-chain">${node(0)}${link("l1")}${node(1)}${link("l2")}${node(2)}</div>
-      <article class="sk-wd" style="--c:${RC[sel.color] || "var(--yellow)"}" aria-live="polite">
+      <div class="mc-dia mc-${S.mode}${S.play ? " mc-playing" : ""}" style="--mc-step:${STEP_MS}ms"><div class="mc-chain">${f.zones.map(zone).join("")}</div>
+        <div class="mc-walk"><span class="mc-ex">Example · you ask “${esc(f.ask)}”</span>
+          <div class="mc-wrow"><p id="mc-cap">${capHTML(st)}</p>
+            <button class="mc-play" type="button" data-mc-play aria-pressed="${!S.play}" aria-label="${S.play ? "Pause" : "Play"} the example">${S.play ? PAUSE : PLAY}</button></div>
+          <span class="mc-dots" id="mc-dots" aria-hidden="true">${dotsHTML(f)}</span></div></div>
+      ${sel ? `<article class="sk-wd" style="--c:${RC[sel.color] || "var(--yellow)"}" aria-live="polite">
         <h4>${svgIc(ICON[ic[S.node]])}${esc(sel.title || sel.name)}</h4>
-        <p class="sk-wdl">${esc(sel.line)}</p>${sel.use ? `<p class="sk-wdu">${esc(sel.use)}</p>` : ""}${more(sel)}</article></section>`;
+        <p class="sk-wdl">${esc(sel.line)}</p>${sel.use ? `<p class="sk-wdu">${esc(sel.use)}</p>` : ""}${more(sel)}</article>`
+        : `<p class="mc-tap">Tap a part to see what it is.</p>`}</section>`;
   }
   // MCP or something lighter: the Choose items, answer first, as on Skills.
   const USE_ICON = [
@@ -3676,6 +3794,7 @@ ${kb("hooks:")}  <span class="sk-cm"># rules that must always hold</span>
       Object.assign(S, { q: "", trust: "all", cat: "all", ag: "all", open: ctx.open });
       requestAnimationFrame(() => { const el = document.getElementById("mc-e-" + ctx.open); if (el) { el.scrollIntoView({ behavior: "auto", block: "start" }); el.querySelector("[data-mc-open]").focus({ preventScroll: true }); } });
     }
+    if (v === "overview") requestAnimationFrame(startWalk);
     const body = { overview: overviewHTML, servers: serversHTML, support: supportHTML, build: buildHTML, safety: safetyHTML }[v]();
     return `<div class="sk mc" data-mc-view="${v}">${headHTML()}<section class="sk-view" aria-label="${esc(VIEWS.find(x => x[0] === v)[1])}">${body}</section></div>`;
   }
@@ -3683,6 +3802,8 @@ ${kb("hooks:")}  <span class="sk-cm"># rules that must always hold</span>
   /* ---------- events, installed once ---------- */
   let bound = false;
   const go = hash => C && C.go ? C.go(hash) : (location.hash = hash);
+  // A new mode or a press of play starts the step's full time again.
+  const restartWalk = () => { clearInterval(walkT); walkT = null; startWalk(); };
   const swap = (id, html, focusSel) => { const el = document.getElementById(id); if (!el) return;
     el.outerHTML = html; const f = focusSel && document.querySelector(focusSel); if (f) f.focus({ preventScroll: true }); };
   function initMcp() {
@@ -3693,8 +3814,9 @@ ${kb("hooks:")}  <span class="sk-cm"># rules that must always hold</span>
       let b;
       if ((b = t.closest("[data-mc-entry]"))) { S.open = b.dataset.mcEntry; go(`${C.base}.servers.${b.dataset.mcEntry}`); return; }
       // overview
-      if ((b = t.closest("[data-mc-node]"))) { S.node = +b.dataset.mcNode; swap("mc-fit", fitHTML(), `[data-mc-node="${S.node}"]`); return; }
-      if ((b = t.closest("[data-mc-mode]"))) { S.mode = b.dataset.mcMode; swap("mc-fit", fitHTML(), `[data-mc-mode="${S.mode}"]`); return; }
+      if ((b = t.closest("[data-mc-node]"))) { const i = +b.dataset.mcNode; S.node = S.node === i ? -1 : i; swap("mc-fit", fitHTML(), `[data-mc-node="${i}"]`); return; }
+      if ((b = t.closest("[data-mc-mode]"))) { S.mode = b.dataset.mcMode; S.step = 0; restartWalk(); swap("mc-fit", fitHTML(), `[data-mc-mode="${S.mode}"]`); return; }
+      if (t.closest("[data-mc-play]")) { S.play = !S.play; restartWalk(); swap("mc-fit", fitHTML(), "[data-mc-play]"); return; }
       if ((b = t.closest("[data-mc-r]"))) { const i = +b.dataset.mcR; S.route = S.route === i ? -1 : i; swap("mc-uses", usesHTML(), `[data-mc-r="${i}"]`); return; }
       // servers
       if (t.closest("[data-mc-fbtn]")) { S.fOpen = !S.fOpen; redrawLib(); return; }
@@ -4720,7 +4842,7 @@ document.addEventListener('keydown', e => {
    page. When it names a newer build, load that, with ?v= so no cache can hand
    the old page back; the ?v= check stops a reload loop if one somehow does.
    In the claude.ai artifact the fetch fails and nothing happens. */
-const BUILD = '6a806eab6110';
+const BUILD = 'a65158d725b3';
 async function checkFresh(){
   if (!/^https?:$/.test(location.protocol)) return;
   try {
